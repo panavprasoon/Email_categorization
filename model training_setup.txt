@@ -1,0 +1,2668 @@
+================================================================================
+STEP 3: MODEL TRAINING & EVALUATION SERVICE
+COMPLETE IMPLEMENTATION GUIDE
+================================================================================
+
+VERSION: 1.0
+DATE: March 6, 2026
+PROJECT: Enterprise Email Categorization System
+PREREQUISITES: Step 1 Complete (Database), Step 2 Complete (Preprocessing Pipeline)
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+SECTION 1: Overview & Architecture
+SECTION 2: Prerequisites & Data Requirements
+SECTION 3: Environment Setup & Dependencies
+SECTION 4: Sample Data Preparation
+SECTION 5: Data Loading Utilities
+SECTION 6: Model Training Service
+SECTION 7: Model Evaluation Module
+SECTION 8: Database Integration
+SECTION 9: Training Pipeline Orchestration
+SECTION 10: Testing Suite
+SECTION 11: Verification Checklist
+SECTION 12: Troubleshooting Guide
+SECTION 13: Next Steps (Step 4 Preview)
+
+================================================================================
+SECTION 1: OVERVIEW & ARCHITECTURE
+================================================================================
+
+1.1 PURPOSE
+-----------
+Step 3 builds the training service that transforms labeled email data into
+production-ready classification models. This includes data preparation, model
+training, evaluation, and registration in your Neon database.
+
+1.2 WHAT STEP 3 ACCOMPLISHES
+----------------------------
+✓ Loads and validates labeled training data
+✓ Splits data into training/validation/test sets
+✓ Trains multiple classifier algorithms
+✓ Performs hyperparameter tuning
+✓ Evaluates model performance (accuracy, precision, recall, F1)
+✓ Saves trained models with versioning
+✓ Registers models in database (model_versions table)
+✓ Generates evaluation reports and confusion matrices
+
+1.3 KEY COMPONENTS
+------------------
+- DataLoader: Load and validate email datasets
+- DataSplitter: Split data for training/validation/testing
+- EmailClassifierTrainer: Train and tune models
+- ModelEvaluator: Calculate performance metrics
+- ModelRegistry: Register models in database
+- TrainingPipeline: Orchestrate complete workflow
+
+1.4 SUPPORTED ALGORITHMS
+------------------------
+1. Logistic Regression (fast, interpretable, good baseline)
+2. Random Forest (handles non-linearity, feature importance)
+3. Support Vector Machine (effective for text classification)
+4. Naive Bayes (fast, works well with limited data)
+
+1.5 FOLDER STRUCTURE
+--------------------
+After Step 3 completion:
+
+email_categorization_system/
+├── .env                              # Neon credentials (Step 1)
+├── config.py                         # Configuration (Step 1)
+├── requirements.txt                  # Dependencies (updated)
+├── download_nltk_data.py            # NLTK data (Step 2)
+├── database/                         # Database layer (Step 1)
+│   ├── __init__.py
+│   ├── connection.py
+│   ├── models.py
+│   └── repository.py
+├── feature_pipeline/                 # Preprocessing (Step 2)
+│   ├── __init__.py
+│   ├── preprocessing.py
+│   ├── feature_extractor.py
+│   ├── pipeline_config.py
+│   └── artifact_manager.py
+├── training/                         # Training service (NEW)
+│   ├── __init__.py
+│   ├── data_loader.py               # Load and validate data
+│   ├── trainer.py                   # Model training service
+│   ├── evaluator.py                 # Model evaluation
+│   └── registry.py                  # Database registration
+├── data/                             # Training datasets (NEW)
+│   ├── raw/                         # Raw email data
+│   ├── processed/                   # Processed datasets
+│   └── sample_emails.csv            # Sample training data
+├── artifacts/                        # Saved artifacts (Step 2)
+│   ├── models/                      # Trained models
+│   ├── vectorizers/                 # TF-IDF vectorizers
+│   ├── configs/                     # Pipeline configs
+│   └── reports/                     # Evaluation reports (NEW)
+└── tests/                           # Test suite
+    ├── __init__.py
+    ├── test_preprocessing.py        # Step 2 tests
+    └── test_training.py             # Step 3 tests (NEW)
+
+================================================================================
+SECTION 2: PREREQUISITES & DATA REQUIREMENTS
+================================================================================
+
+2.1 COMPLETION CHECKLIST
+-------------------------
+Before starting Step 3, ensure:
+
+[ ] Step 1 Complete: Neon database deployed and tested
+[ ] Step 2 Complete: All preprocessing tests passing (24/24)
+[ ] Virtual environment activated
+[ ] All Step 2 dependencies installed
+[ ] NLTK data downloaded
+
+Verify Step 2 works:
+python -c "from feature_pipeline import EmailFeatureExtractor; print('✓ Step 2 ready')"
+
+2.2 DATA REQUIREMENTS
+----------------------
+You need labeled email data for training. Each email must have:
+- Text content (subject + body combined, or just body)
+- Category label (e.g., "urgent", "meeting", "update", "spam")
+
+MINIMUM DATA REQUIREMENTS:
+- Total emails: 500-1000+ (more is better)
+- Per category: 100-200+ samples
+- Categories: 3-10 different categories
+- Quality: Real or realistic email content
+
+2.3 DATA FORMAT
+---------------
+Required CSV format:
+
+email_id,text,category
+1,"urgent meeting tomorrow morning at 10am","meeting"
+2,"project status update required by friday","update"
+3,"please review attached quarterly report","report"
+4,"spam advertisement offer click here","spam"
+
+Required columns:
+- email_id: Unique identifier (integer or string)
+- text: Email content (subject + body, or just body)
+- category: Classification label (string)
+
+Optional columns (can be ignored):
+- subject, body, sender, date, priority, etc.
+
+2.4 DATA SOURCES
+----------------
+Option A: Use your own emails
+- Export from Outlook/Gmail
+- Manually label categories
+- Save as CSV
+
+Option B: Public datasets
+- Enron Email Dataset: https://www.cs.cmu.edu/~enron/
+- 20 Newsgroups: sklearn.datasets.fetch_20newsgroups
+- SpamAssassin: Public spam/ham corpus
+
+Option C: Sample data (for testing Step 3)
+- We'll create synthetic sample data in Section 4
+- Use this to learn Step 3, replace with real data later
+
+2.5 DATA QUALITY TIPS
+----------------------
+✓ Balance: Similar number of samples per category (or handle imbalance)
+✓ Variety: Diverse writing styles, lengths, topics within each category
+✓ Consistency: Standardize category names ("urgent" not "URGENT" or "Urgent")
+✓ Realism: Real email content (not just "test test test")
+✓ Clean: Remove personal information if needed (GDPR compliance)
+
+================================================================================
+SECTION 3: ENVIRONMENT SETUP & DEPENDENCIES
+================================================================================
+
+3.1 UPDATE requirements.txt
+----------------------------
+Add these NEW dependencies for Step 3:
+
+# Existing dependencies (Steps 1 & 2)
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.23
+python-dotenv==1.0.0
+scikit-learn==1.3.2
+numpy==1.26.2
+nltk==3.8.1
+joblib==1.3.2
+regex==2023.10.3
+
+# NEW: Step 3 dependencies
+pandas==2.1.3                 # Data manipulation and CSV handling
+imbalanced-learn==0.11.0      # Handle class imbalance (SMOTE)
+matplotlib==3.8.2             # Plotting (confusion matrix, charts)
+seaborn==0.13.0              # Statistical visualizations
+
+3.2 INSTALL NEW DEPENDENCIES
+-----------------------------
+Activate virtual environment and install:
+
+# Windows PowerShell
+cd C:\path\to\email_categorization_system
+.\venv\Scripts\Activate
+pip install pandas==2.1.3 imbalanced-learn==0.11.0 matplotlib==3.8.2 seaborn==0.13.0
+
+Expected output:
+Successfully installed pandas-2.1.3
+Successfully installed imbalanced-learn-0.11.0
+Successfully installed matplotlib-3.8.2
+Successfully installed seaborn-0.13.0
+
+Verify installation:
+pip list | Select-String "pandas|imbalanced-learn|matplotlib|seaborn"
+
+3.3 CREATE FOLDER STRUCTURE
+----------------------------
+Create new directories for Step 3:
+
+# PowerShell
+New-Item -ItemType Directory -Force -Path "training"
+New-Item -ItemType Directory -Force -Path "data\raw"
+New-Item -ItemType Directory -Force -Path "data\processed"
+New-Item -ItemType Directory -Force -Path "artifacts\reports"
+
+Verify:
+Get-ChildItem -Directory
+
+You should see:
+- database/
+- feature_pipeline/
+- training/          ← NEW
+- data/              ← NEW
+- artifacts/
+- tests/
+
+================================================================================
+SECTION 4: SAMPLE DATA PREPARATION
+================================================================================
+
+4.1 CREATE SAMPLE DATASET
+--------------------------
+For learning Step 3, we'll create realistic sample email data.
+Later, replace this with your real labeled data.
+
+Create file: data/sample_emails.csv
+
+email_id,text,category
+1,"URGENT: Server down in production environment. Need immediate attention from DevOps team.","incident"
+2,"Hi team, our weekly status meeting has been moved to Thursday 2pm instead of Friday.","meeting"
+3,"Please find attached the Q4 financial report for your review and approval.","report"
+4,"Reminder: Project deadline is next Monday. Please submit all deliverables by EOD Friday.","reminder"
+5,"Congratulations! You've won a free iPhone. Click here to claim your prize now!","spam"
+6,"Budget approval needed for new cloud infrastructure migration project.","approval"
+7,"Quarterly team meeting scheduled for next week. Agenda will be shared tomorrow.","meeting"
+8,"CRITICAL: Database backup failed last night. Investigating root cause.","incident"
+9,"Monthly performance review report attached. Please review before our 1-on-1.","report"
+10,"Don't miss this amazing limited time offer! 50% discount on all products!","spam"
+11,"Please approve the hiring request for 2 senior engineers for the platform team.","approval"
+12,"Friendly reminder: Submit your timesheets by end of day today.","reminder"
+13,"Production deployment scheduled for Saturday 3am. Rollback plan attached.","meeting"
+14,"WARNING: Security vulnerability detected in authentication service. Patch immediately.","incident"
+15,"Annual company retreat planning. Please fill out the survey about location preferences.","meeting"
+16,"Expense report for October business travel attached for approval.","approval"
+17,"Weekly project status report: We're on track for the Q1 release.","report"
+18,"You have been selected for a special investment opportunity. Act now!","spam"
+19,"Reminder: Performance reviews due next Friday. Please complete self-assessment.","reminder"
+20,"URGENT: Customer data breach detected. Emergency response team meeting in 10 minutes.","incident"
+21,"Team lunch tomorrow at 12:30pm. Please confirm attendance.","meeting"
+22,"Technical architecture review report for microservices migration project.","report"
+23,"Amazing work from home opportunities! Earn $5000 per week!","spam"
+24,"Please approve the purchase order for new development laptops.","approval"
+25,"Reminder: Code freeze starts Monday for the release next week.","reminder"
+26,"System outage in payment processing. All hands on deck.","incident"
+27,"Board meeting minutes from last quarter attached for your records.","report"
+28,"Congratulations! You are pre-approved for a $50,000 loan.","spam"
+29,"Sprint planning meeting tomorrow 10am. Please review user stories beforehand.","meeting"
+30,"Approval needed for cloud spending increase - usage higher than projected.","approval"
+31,"CRITICAL: API gateway experiencing intermittent failures. Rolling back deployment.","incident"
+32,"Reminder: All-hands company meeting this Friday at 3pm.","reminder"
+33,"Annual security audit report completed. Summary and recommendations attached.","report"
+34,"Click here to update your account information immediately or account will be closed!","spam"
+35,"Design review meeting for new mobile app features next Tuesday.","meeting"
+36,"Annual budget proposal for 2026 requires executive approval by next week.","approval"
+37,"Weekly sales report shows 15% increase compared to last month.","report"
+38,"Production database running out of disk space. Need immediate capacity expansion.","incident"
+39,"Reminder: Submit Q4 OKRs by end of this week.","reminder"
+40,"Get rich quick with our proven trading system! 100% guaranteed returns!","spam"
+41,"Kickoff meeting for customer onboarding automation project next Monday.","meeting"
+42,"Travel expense reimbursement request needs manager approval.","approval"
+43,"User research findings report: 80% satisfaction rate with new dashboard.","report"
+44,"URGENT: Email service down - cannot send or receive emails company-wide.","incident"
+45,"Reminder: Don't forget to join the town hall at 4pm today.","reminder"
+46,"Your account has been compromised! Reset password immediately by clicking here.","spam"
+47,"Retrospective meeting for sprint 23 - what went well and what to improve.","meeting"
+48,"Contract renewal with cloud provider needs legal and finance approval.","approval"
+49,"Market analysis report: competitor launched similar product last week.","report"
+50,"System maintenance window tonight 11pm-2am. Services will be unavailable.","incident"
+
+4.2 DATA STATISTICS
+-------------------
+This sample dataset contains:
+- Total emails: 50
+- Categories: 6 (incident, meeting, report, spam, approval, reminder)
+- Per category: 8-9 samples each (balanced)
+
+For production, you'll need 10-20x more data (500-1000+ emails).
+
+4.3 ALTERNATIVE: GENERATE MORE SAMPLE DATA
+------------------------------------------
+If you want to practice with larger dataset, create this script:
+
+Create file: data/generate_sample_data.py
+
+"""Generate synthetic email dataset for testing."""
+
+import pandas as pd
+import random
+
+# Email templates per category
+templates = {
+    'incident': [
+        "URGENT: {} service down. Immediate action required.",
+        "CRITICAL: {} failure detected. Investigation ongoing.",
+        "Production issue: {} not responding. Emergency response needed.",
+        "System alert: {} experiencing errors. DevOps investigating.",
+        "Security incident: {} vulnerability found. Patch needed urgently."
+    ],
+    'meeting': [
+        "Team meeting scheduled for {} to discuss {}.",
+        "Planning session for {} project next week.",
+        "{} review meeting moved to Thursday.",
+        "Kickoff meeting for {} initiative on Monday.",
+        "Weekly sync for {} team at 10am tomorrow."
+    ],
+    'report': [
+        "{} quarterly report attached for review.",
+        "Monthly {} analysis completed. Summary attached.",
+        "{} performance metrics for last week.",
+        "Annual {} report ready for distribution.",
+        "Weekly {} status update and progress report."
+    ],
+    'spam': [
+        "Congratulations! You won {}! Click here now!",
+        "Amazing {} opportunity! Limited time offer!",
+        "Get {} free! Act now before it's too late!",
+        "You've been selected for {}! Claim your prize!",
+        "Unbelievable {} deal! 90% discount today only!"
+    ],
+    'approval': [
+        "Approval needed for {} budget increase.",
+        "Please approve {} request by end of week.",
+        "{} purchase order requires manager approval.",
+        "Sign-off needed for {} contract renewal.",
+        "Budget approval: {} project funding request."
+    ],
+    'reminder': [
+        "Reminder: {} deadline is next Friday.",
+        "Don't forget: {} submission due tomorrow.",
+        "Friendly reminder about {} meeting at 2pm.",
+        "Reminder: {} review needs to be completed.",
+        "Please remember to submit {} by EOD."
+    ]
+}
+
+# Variables to fill templates
+services = ['database', 'API', 'authentication', 'payment', 'email', 'cloud']
+topics = ['budget', 'architecture', 'hiring', 'project X', 'migration', 'security']
+items = ['$10,000', 'iPhone', 'vacation', 'prize', 'credit card', 'investment']
+tasks = ['timesheets', 'expenses', 'OKRs', 'reviews', 'reports', 'surveys']
+
+def generate_emails(count=200):
+    """Generate synthetic email dataset."""
+    emails = []
+    email_id = 1
+    
+    emails_per_category = count // len(templates)
+    
+    for category, template_list in templates.items():
+        for i in range(emails_per_category):
+            template = random.choice(template_list)
+            
+            # Fill template with random variables
+            if category == 'incident':
+                text = template.format(random.choice(services))
+            elif category == 'meeting':
+                text = template.format(random.choice(topics), random.choice(topics))
+            elif category == 'report':
+                text = template.format(random.choice(topics))
+            elif category == 'spam':
+                text = template.format(random.choice(items))
+            elif category == 'approval':
+                text = template.format(random.choice(topics))
+            elif category == 'reminder':
+                text = template.format(random.choice(tasks))
+            
+            emails.append({
+                'email_id': email_id,
+                'text': text,
+                'category': category
+            })
+            email_id += 1
+    
+    # Shuffle emails
+    random.shuffle(emails)
+    
+    # Create DataFrame
+    df = pd.DataFrame(emails)
+    return df
+
+if __name__ == "__main__":
+    # Generate 200 emails
+    df = generate_emails(200)
+    
+    # Save to CSV
+    df.to_csv('data/sample_emails_large.csv', index=False)
+    
+    # Print statistics
+    print(f"Generated {len(df)} emails")
+    print("\nCategory distribution:")
+    print(df['category'].value_counts().sort_index())
+    print(f"\nSaved to: data/sample_emails_large.csv")
+
+Run it:
+python data/generate_sample_data.py
+
+This creates sample_emails_large.csv with 200 emails (33 per category).
+
+================================================================================
+SECTION 5: DATA LOADING UTILITIES
+================================================================================
+
+5.1 CREATE training/data_loader.py
+-----------------------------------
+This module loads and validates email datasets.
+
+"""
+Data loading and validation utilities for email classification training.
+
+This module provides:
+- CSV data loading
+- Data validation (missing values, format checks)
+- Train/validation/test splitting
+- Class distribution analysis
+- Data sampling and balancing
+"""
+
+import os
+import pandas as pd
+import numpy as np
+from typing import Tuple, Dict, List, Optional
+from sklearn.model_selection import train_test_split
+from collections import Counter
+
+class EmailDataLoader:
+    """
+    Load and validate email datasets for training.
+    
+    Example:
+        >>> loader = EmailDataLoader()
+        >>> df = loader.load_csv("data/sample_emails.csv")
+        >>> loader.validate_data(df)
+        >>> splits = loader.split_data(df, test_size=0.2, val_size=0.1)
+    """
+    
+    def __init__(self, text_column: str = 'text', label_column: str = 'category'):
+        """
+        Initialize data loader.
+        
+        Args:
+            text_column: Name of column containing email text
+            label_column: Name of column containing category labels
+        """
+        self.text_column = text_column
+        self.label_column = label_column
+    
+    def load_csv(self, filepath: str, encoding: str = 'utf-8') -> pd.DataFrame:
+        """
+        Load email data from CSV file.
+        
+        Args:
+            filepath: Path to CSV file
+            encoding: File encoding (default: utf-8)
+            
+        Returns:
+            DataFrame with email data
+            
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If required columns missing
+        """
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"Data file not found: {filepath}")
+        
+        # Load CSV
+        df = pd.read_csv(filepath, encoding=encoding)
+        
+        print(f"Loaded {len(df)} emails from {filepath}")
+        
+        # Validate required columns
+        required_cols = [self.text_column, self.label_column]
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        
+        if missing_cols:
+            raise ValueError(
+                f"Missing required columns: {missing_cols}. "
+                f"Available columns: {list(df.columns)}"
+            )
+        
+        return df
+    
+    def validate_data(self, df: pd.DataFrame) -> Dict[str, any]:
+        """
+        Validate data quality and report issues.
+        
+        Args:
+            df: DataFrame to validate
+            
+        Returns:
+            Dictionary with validation results
+        """
+        print("\n" + "=" * 60)
+        print("DATA VALIDATION REPORT")
+        print("=" * 60)
+        
+        validation = {}
+        
+        # Check total records
+        total_records = len(df)
+        validation['total_records'] = total_records
+        print(f"Total records: {total_records}")
+        
+        # Check missing values
+        missing_text = df[self.text_column].isna().sum()
+        missing_labels = df[self.label_column].isna().sum()
+        validation['missing_text'] = missing_text
+        validation['missing_labels'] = missing_labels
+        
+        print(f"\nMissing values:")
+        print(f"  - Text: {missing_text} ({missing_text/total_records*100:.1f}%)")
+        print(f"  - Labels: {missing_labels} ({missing_labels/total_records*100:.1f}%)")
+        
+        # Check empty strings
+        empty_text = (df[self.text_column].str.strip() == '').sum()
+        validation['empty_text'] = empty_text
+        print(f"  - Empty text: {empty_text}")
+        
+        # Check duplicates
+        duplicates = df.duplicated(subset=[self.text_column]).sum()
+        validation['duplicates'] = duplicates
+        print(f"\nDuplicate emails: {duplicates}")
+        
+        # Check class distribution
+        class_counts = df[self.label_column].value_counts()
+        validation['class_distribution'] = class_counts.to_dict()
+        
+        print(f"\nClass distribution:")
+        for category, count in class_counts.items():
+            percentage = count / total_records * 100
+            print(f"  - {category}: {count} ({percentage:.1f}%)")
+        
+        # Check class balance
+        max_count = class_counts.max()
+        min_count = class_counts.min()
+        imbalance_ratio = max_count / min_count if min_count > 0 else float('inf')
+        validation['imbalance_ratio'] = imbalance_ratio
+        
+        print(f"\nClass balance:")
+        print(f"  - Most common: {class_counts.index[0]} ({max_count} samples)")
+        print(f"  - Least common: {class_counts.index[-1]} ({min_count} samples)")
+        print(f"  - Imbalance ratio: {imbalance_ratio:.2f}x")
+        
+        if imbalance_ratio > 3:
+            print(f"  ⚠ WARNING: Significant class imbalance detected!")
+            print(f"    Consider using SMOTE or class weights.")
+        
+        # Check text lengths
+        text_lengths = df[self.text_column].str.len()
+        validation['avg_text_length'] = text_lengths.mean()
+        validation['min_text_length'] = text_lengths.min()
+        validation['max_text_length'] = text_lengths.max()
+        
+        print(f"\nText statistics:")
+        print(f"  - Average length: {text_lengths.mean():.0f} characters")
+        print(f"  - Min length: {text_lengths.min()}")
+        print(f"  - Max length: {text_lengths.max()}")
+        
+        # Overall health
+        print("\n" + "=" * 60)
+        issues = []
+        if missing_text > 0 or missing_labels > 0:
+            issues.append("Missing values detected")
+        if empty_text > 0:
+            issues.append("Empty text fields detected")
+        if duplicates > total_records * 0.1:
+            issues.append("High duplicate rate")
+        if imbalance_ratio > 5:
+            issues.append("Severe class imbalance")
+        
+        if issues:
+            print("⚠ ISSUES FOUND:")
+            for issue in issues:
+                print(f"  - {issue}")
+            validation['status'] = 'warning'
+        else:
+            print("✓ DATA VALIDATION PASSED")
+            validation['status'] = 'ok'
+        
+        print("=" * 60 + "\n")
+        
+        return validation
+    
+    def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Clean data by removing invalid records.
+        
+        Args:
+            df: DataFrame to clean
+            
+        Returns:
+            Cleaned DataFrame
+        """
+        original_count = len(df)
+        
+        # Remove missing values
+        df = df.dropna(subset=[self.text_column, self.label_column])
+        
+        # Remove empty strings
+        df = df[df[self.text_column].str.strip() != '']
+        
+        # Remove duplicates
+        df = df.drop_duplicates(subset=[self.text_column])
+        
+        # Reset index
+        df = df.reset_index(drop=True)
+        
+        removed = original_count - len(df)
+        if removed > 0:
+            print(f"Cleaned data: removed {removed} invalid records")
+            print(f"Remaining records: {len(df)}")
+        
+        return df
+    
+    def split_data(
+        self,
+        df: pd.DataFrame,
+        test_size: float = 0.2,
+        val_size: float = 0.1,
+        random_state: int = 42,
+        stratify: bool = True
+    ) -> Dict[str, Tuple[pd.Series, pd.Series]]:
+        """
+        Split data into train, validation, and test sets.
+        
+        Args:
+            df: DataFrame to split
+            test_size: Proportion for test set (0.2 = 20%)
+            val_size: Proportion for validation set (0.1 = 10%)
+            random_state: Random seed for reproducibility
+            stratify: Maintain class distribution in splits
+            
+        Returns:
+            Dictionary with 'train', 'val', 'test' splits
+            Each split is tuple of (texts, labels)
+        """
+        X = df[self.text_column]
+        y = df[self.label_column]
+        
+        stratify_labels = y if stratify else None
+        
+        # First split: separate test set
+        X_temp, X_test, y_temp, y_test = train_test_split(
+            X, y,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=stratify_labels
+        )
+        
+        # Second split: separate validation from training
+        # Adjust val_size relative to remaining data
+        val_size_adjusted = val_size / (1 - test_size)
+        
+        stratify_temp = y_temp if stratify else None
+        
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_temp, y_temp,
+            test_size=val_size_adjusted,
+            random_state=random_state,
+            stratify=stratify_temp
+        )
+        
+        print("\n" + "=" * 60)
+        print("DATA SPLIT SUMMARY")
+        print("=" * 60)
+        print(f"Training set: {len(X_train)} samples ({len(X_train)/len(df)*100:.1f}%)")
+        print(f"Validation set: {len(X_val)} samples ({len(X_val)/len(df)*100:.1f}%)")
+        print(f"Test set: {len(X_test)} samples ({len(X_test)/len(df)*100:.1f}%)")
+        print("=" * 60 + "\n")
+        
+        return {
+            'train': (X_train, y_train),
+            'val': (X_val, y_val),
+            'test': (X_test, y_test)
+        }
+    
+    def get_class_weights(self, labels: pd.Series) -> Dict[str, float]:
+        """
+        Calculate class weights for imbalanced datasets.
+        
+        Args:
+            labels: Series of category labels
+            
+        Returns:
+            Dictionary mapping category to weight
+        """
+        from sklearn.utils.class_weight import compute_class_weight
+        
+        classes = np.unique(labels)
+        weights = compute_class_weight('balanced', classes=classes, y=labels)
+        
+        class_weights = dict(zip(classes, weights))
+        
+        print("Class weights (for imbalanced data):")
+        for category, weight in class_weights.items():
+            print(f"  {category}: {weight:.3f}")
+        
+        return class_weights
+
+5.2 CREATE training/__init__.py
+--------------------------------
+Create file: training/__init__.py
+
+"""
+Training Service Package
+
+Provides model training, evaluation, and registration functionality.
+"""
+
+from .data_loader import EmailDataLoader
+
+__all__ = ['EmailDataLoader']
+
+================================================================================
+SECTION 6: MODEL TRAINING SERVICE
+================================================================================
+
+6.1 CREATE training/trainer.py
+-------------------------------
+This module trains classification models with hyperparameter tuning.
+
+"""
+Email classification model training service.
+
+Supports multiple algorithms:
+- Logistic Regression
+- Random Forest
+- Support Vector Machine (SVM)
+- Naive Bayes
+
+Includes hyperparameter tuning with GridSearchCV.
+"""
+
+import os
+import joblib
+import numpy as np
+from typing import Dict, List, Tuple, Optional, Any
+from datetime import datetime
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import GridSearchCV, cross_val_score
+from sklearn.metrics import classification_report, confusion_matrix
+
+from feature_pipeline import EmailFeatureExtractor, PipelineConfig
+
+class EmailClassifierTrainer:
+    """
+    Train email classification models with multiple algorithms.
+    
+    Example:
+        >>> trainer = EmailClassifierTrainer()
+        >>> trainer.train(
+        ...     train_texts=['urgent meeting', 'project update'],
+        ...     train_labels=['meeting', 'update'],
+        ...     model_type='logistic_regression'
+        ... )
+        >>> trainer.save_model('artifacts/models/model_v1.0.pkl')
+    """
+    
+    # Hyperparameter grids for tuning
+    PARAM_GRIDS = {
+        'logistic_regression': {
+            'C': [0.1, 1.0, 10.0],
+            'max_iter': [1000],
+            'class_weight': ['balanced', None]
+        },
+        'random_forest': {
+            'n_estimators': [100, 200],
+            'max_depth': [10, 20, None],
+            'min_samples_split': [2, 5],
+            'class_weight': ['balanced', None]
+        },
+        'svm': {
+            'C': [0.1, 1.0, 10.0],
+            'kernel': ['linear', 'rbf'],
+            'class_weight': ['balanced', None]
+        },
+        'naive_bayes': {
+            'alpha': [0.1, 0.5, 1.0]
+        }
+    }
+    
+    def __init__(self, pipeline_config: Optional[PipelineConfig] = None):
+        """
+        Initialize trainer.
+        
+        Args:
+            pipeline_config: Configuration for preprocessing pipeline
+        """
+        if pipeline_config is None:
+            from feature_pipeline import get_default_config
+            pipeline_config = get_default_config()
+        
+        self.config = pipeline_config
+        self.feature_extractor = None
+        self.model = None
+        self.model_type = None
+        self.best_params = None
+        self.training_history = {}
+    
+    def train(
+        self,
+        train_texts: List[str],
+        train_labels: List[str],
+        model_type: str = 'logistic_regression',
+        tune_hyperparams: bool = True,
+        cv_folds: int = 5,
+        val_texts: Optional[List[str]] = None,
+        val_labels: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """
+        Train classification model.
+        
+        Args:
+            train_texts: Training email texts
+            train_labels: Training labels
+            model_type: Algorithm ('logistic_regression', 'random_forest', 
+                       'svm', 'naive_bayes')
+            tune_hyperparams: Perform hyperparameter tuning
+            cv_folds: Number of cross-validation folds
+            val_texts: Validation texts (optional)
+            val_labels: Validation labels (optional)
+            
+        Returns:
+            Dictionary with training results and metrics
+        """
+        print("\n" + "=" * 70)
+        print(f"TRAINING {model_type.upper().replace('_', ' ')} MODEL")
+        print("=" * 70)
+        
+        self.model_type = model_type
+        
+        # Step 1: Feature extraction
+        print("\n[1/4] Extracting features...")
+        self.feature_extractor = EmailFeatureExtractor(
+            max_features=self.config.feature_extraction.max_features,
+            ngram_range=self.config.feature_extraction.ngram_range,
+            min_df=self.config.feature_extraction.min_df,
+            max_df=self.config.feature_extraction.max_df,
+            preprocessor_config=self.config.preprocessing.to_dict()
+        )
+        
+        X_train = self.feature_extractor.fit_transform(train_texts)
+        y_train = np.array(train_labels)
+        
+        print(f"  ✓ Training features: {X_train.shape}")
+        print(f"  ✓ Vocabulary size: {self.feature_extractor.get_vocabulary_size()}")
+        
+        # Validation features if provided
+        X_val, y_val = None, None
+        if val_texts is not None and val_labels is not None:
+            X_val = self.feature_extractor.transform(val_texts)
+            y_val = np.array(val_labels)
+            print(f"  ✓ Validation features: {X_val.shape}")
+        
+        # Step 2: Initialize model
+        print(f"\n[2/4] Initializing {model_type} classifier...")
+        base_model = self._get_base_model(model_type)
+        
+        # Step 3: Hyperparameter tuning or direct training
+        if tune_hyperparams and model_type in self.PARAM_GRIDS:
+            print(f"\n[3/4] Tuning hyperparameters ({cv_folds}-fold CV)...")
+            self.model, self.best_params = self._tune_hyperparameters(
+                base_model, X_train, y_train, model_type, cv_folds
+            )
+        else:
+            print(f"\n[3/4] Training with default parameters...")
+            self.model = base_model
+            self.model.fit(X_train, y_train)
+            self.best_params = None
+        
+        # Step 4: Evaluate
+        print(f"\n[4/4] Evaluating model...")
+        results = self._evaluate_training(
+            X_train, y_train, X_val, y_val
+        )
+        
+        # Store training history
+        self.training_history = {
+            'model_type': model_type,
+            'training_samples': len(train_texts),
+            'validation_samples': len(val_texts) if val_texts else 0,
+            'num_classes': len(np.unique(train_labels)),
+            'vocabulary_size': self.feature_extractor.get_vocabulary_size(),
+            'best_params': self.best_params,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        print("\n" + "=" * 70)
+        print("✓ TRAINING COMPLETE")
+        print("=" * 70 + "\n")
+        
+        return results
+    
+    def _get_base_model(self, model_type: str):
+        """Get base model by type."""
+        models = {
+            'logistic_regression': LogisticRegression(random_state=42),
+            'random_forest': RandomForestClassifier(random_state=42),
+            'svm': SVC(random_state=42, probability=True),
+            'naive_bayes': MultinomialNB()
+        }
+        
+        if model_type not in models:
+            raise ValueError(
+                f"Unknown model type: {model_type}. "
+                f"Supported: {list(models.keys())}"
+            )
+        
+        return models[model_type]
+    
+    def _tune_hyperparameters(
+        self,
+        base_model,
+        X_train,
+        y_train,
+        model_type: str,
+        cv_folds: int
+    ) -> Tuple[Any, Dict]:
+        """Perform hyperparameter tuning with GridSearchCV."""
+        param_grid = self.PARAM_GRIDS[model_type]
+        
+        print(f"  Testing {self._count_combinations(param_grid)} parameter combinations...")
+        
+        grid_search = GridSearchCV(
+            base_model,
+            param_grid,
+            cv=cv_folds,
+            scoring='f1_weighted',
+            n_jobs=-1,
+            verbose=1
+        )
+        
+        grid_search.fit(X_train, y_train)
+        
+        print(f"\n  ✓ Best parameters: {grid_search.best_params_}")
+        print(f"  ✓ Best CV F1 score: {grid_search.best_score_:.4f}")
+        
+        return grid_search.best_estimator_, grid_search.best_params_
+    
+    def _count_combinations(self, param_grid: Dict) -> int:
+        """Count total parameter combinations."""
+        count = 1
+        for values in param_grid.values():
+            count *= len(values)
+        return count
+    
+    def _evaluate_training(
+        self,
+        X_train,
+        y_train,
+        X_val=None,
+        y_val=None
+    ) -> Dict[str, Any]:
+        """Evaluate trained model."""
+        results = {}
+        
+        # Training set performance
+        train_pred = self.model.predict(X_train)
+        train_accuracy = (train_pred == y_train).mean()
+        results['train_accuracy'] = train_accuracy
+        print(f"  Training accuracy: {train_accuracy:.4f}")
+        
+        # Validation set performance
+        if X_val is not None and y_val is not None:
+            val_pred = self.model.predict(X_val)
+            val_accuracy = (val_pred == y_val).mean()
+            results['val_accuracy'] = val_accuracy
+            print(f"  Validation accuracy: {val_accuracy:.4f}")
+            
+            # Check overfitting
+            if train_accuracy - val_accuracy > 0.1:
+                print(f"  ⚠ Potential overfitting detected (gap: {train_accuracy - val_accuracy:.4f})")
+        
+        return results
+    
+    def predict(self, texts: List[str]) -> np.ndarray:
+        """
+        Predict categories for new emails.
+        
+        Args:
+            texts: Email texts to classify
+            
+        Returns:
+            Array of predicted categories
+        """
+        if self.model is None or self.feature_extractor is None:
+            raise ValueError("Model not trained. Call train() first.")
+        
+        features = self.feature_extractor.transform(texts)
+        predictions = self.model.predict(features)
+        return predictions
+    
+    def predict_proba(self, texts: List[str]) -> np.ndarray:
+        """
+        Predict probability distributions.
+        
+        Args:
+            texts: Email texts to classify
+            
+        Returns:
+            Array of probability distributions (n_samples, n_classes)
+        """
+        if self.model is None or self.feature_extractor is None:
+            raise ValueError("Model not trained. Call train() first.")
+        
+        features = self.feature_extractor.transform(texts)
+        
+        if hasattr(self.model, 'predict_proba'):
+            probabilities = self.model.predict_proba(features)
+        else:
+            # Fallback for models without predict_proba
+            predictions = self.model.predict(features)
+            probabilities = np.zeros((len(predictions), len(self.model.classes_)))
+            for i, pred in enumerate(predictions):
+                class_idx = np.where(self.model.classes_ == pred)[0][0]
+                probabilities[i, class_idx] = 1.0
+        
+        return probabilities
+    
+    def get_feature_importance(self, top_n: int = 20) -> Dict[str, List[Tuple[str, float]]]:
+        """
+        Get most important features per class.
+        
+        Args:
+            top_n: Number of top features to return
+            
+        Returns:
+            Dictionary mapping class to list of (feature, importance) tuples
+        """
+        if self.model is None:
+            raise ValueError("Model not trained.")
+        
+        feature_names = self.feature_extractor.get_feature_names()
+        importance_per_class = {}
+        
+        if isinstance(self.model, LogisticRegression):
+            # Coefficients for each class
+            for idx, class_name in enumerate(self.model.classes_):
+                if len(self.model.classes_) == 2 and self.model.coef_.shape[0] == 1:
+                    # Binary classification
+                    coef = self.model.coef_[0] if idx == 1 else -self.model.coef_[0]
+                else:
+                    coef = self.model.coef_[idx]
+                
+                top_indices = np.argsort(np.abs(coef))[-top_n:][::-1]
+                top_features = [(feature_names[i], coef[i]) for i in top_indices]
+                importance_per_class[class_name] = top_features
+        
+        elif isinstance(self.model, RandomForestClassifier):
+            # Feature importance from Random Forest
+            importances = self.model.feature_importances_
+            top_indices = np.argsort(importances)[-top_n:][::-1]
+            top_features = [(feature_names[i], importances[i]) for i in top_indices]
+            importance_per_class['overall'] = top_features
+        
+        return importance_per_class
+    
+    def save_model(self, filepath: str) -> None:
+        """
+        Save trained model and feature extractor.
+        
+        Args:
+            filepath: Path to save model (.pkl extension)
+        """
+        if self.model is None or self.feature_extractor is None:
+            raise ValueError("Model not trained. Call train() first.")
+        
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        # Package model + extractor + config
+        package = {
+            'model': self.model,
+            'feature_extractor': self.feature_extractor,
+            'config': self.config,
+            'model_type': self.model_type,
+            'best_params': self.best_params,
+            'training_history': self.training_history,
+            'classes': self.model.classes_.tolist()
+        }
+        
+        joblib.dump(package, filepath)
+        print(f"✓ Saved model to {filepath}")
+    
+    @classmethod
+    def load_model(cls, filepath: str) -> 'EmailClassifierTrainer':
+        """
+        Load trained model.
+        
+        Args:
+            filepath: Path to saved model
+            
+        Returns:
+            Loaded EmailClassifierTrainer instance
+        """
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"Model file not found: {filepath}")
+        
+        package = joblib.load(filepath)
+        
+        trainer = cls(pipeline_config=package['config'])
+        trainer.model = package['model']
+        trainer.feature_extractor = package['feature_extractor']
+        trainer.model_type = package['model_type']
+        trainer.best_params = package.get('best_params')
+        trainer.training_history = package.get('training_history', {})
+        
+        print(f"✓ Loaded model from {filepath}")
+        return trainer
+
+6.2 UPDATE training/__init__.py
+--------------------------------
+Update file: training/__init__.py
+
+"""
+Training Service Package
+
+Provides model training, evaluation, and registration functionality.
+"""
+
+from .data_loader import EmailDataLoader
+from .trainer import EmailClassifierTrainer
+
+__all__ = ['EmailDataLoader', 'EmailClassifierTrainer']
+
+================================================================================
+SECTION 7: MODEL EVALUATION MODULE
+================================================================================
+
+7.1 CREATE training/evaluator.py
+---------------------------------
+This module calculates detailed performance metrics.
+
+"""
+Model evaluation and performance metrics.
+
+Calculates:
+- Accuracy, Precision, Recall, F1-score
+- Confusion matrix
+- Per-class metrics
+- Classification report
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend
+import matplotlib.pyplot as plt
+import seaborn as sns
+from typing import Dict, List, Optional, Tuple
+from sklearn.metrics import (
+    accuracy_score,
+    precision_recall_fscore_support,
+    classification_report,
+    confusion_matrix
+)
+
+class ModelEvaluator:
+    """
+    Evaluate email classification model performance.
+    
+    Example:
+        >>> evaluator = ModelEvaluator()
+        >>> metrics = evaluator.evaluate(
+        ...     y_true=['meeting', 'spam', 'meeting'],
+        ...     y_pred=['meeting', 'meeting', 'meeting']
+        ... )
+        >>> evaluator.plot_confusion_matrix(
+        ...     y_true, y_pred, 
+        ...     save_path='artifacts/reports/confusion_matrix.png'
+        ... )
+    """
+    
+    def __init__(self):
+        """Initialize evaluator."""
+        pass
+    
+    def evaluate(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        y_pred_proba: Optional[np.ndarray] = None
+    ) -> Dict[str, float]:
+        """
+        Calculate comprehensive evaluation metrics.
+        
+        Args:
+            y_true: True labels
+            y_pred: Predicted labels
+            y_pred_proba: Prediction probabilities (optional)
+            
+        Returns:
+            Dictionary with metrics
+        """
+        metrics = {}
+        
+        # Overall accuracy
+        metrics['accuracy'] = accuracy_score(y_true, y_pred)
+        
+        # Precision, Recall, F1 (weighted average)
+        precision, recall, f1, support = precision_recall_fscore_support(
+            y_true, y_pred, average='weighted', zero_division=0
+        )
+        metrics['precision'] = precision
+        metrics['recall'] = recall
+        metrics['f1_score'] = f1
+        
+        # Macro averages (unweighted)
+        precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(
+            y_true, y_pred, average='macro', zero_division=0
+        )
+        metrics['precision_macro'] = precision_macro
+        metrics['recall_macro'] = recall_macro
+        metrics['f1_score_macro'] = f1_macro
+        
+        return metrics
+    
+    def evaluate_per_class(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray
+    ) -> pd.DataFrame:
+        """
+        Calculate per-class metrics.
+        
+        Args:
+            y_true: True labels
+            y_pred: Predicted labels
+            
+        Returns:
+            DataFrame with per-class metrics
+        """
+        # Get unique classes
+        classes = np.unique(np.concatenate([y_true, y_pred]))
+        
+        # Calculate per-class metrics
+        precision, recall, f1, support = precision_recall_fscore_support(
+            y_true, y_pred, labels=classes, zero_division=0
+        )
+        
+        # Create DataFrame
+        df = pd.DataFrame({
+            'class': classes,
+            'precision': precision,
+            'recall': recall,
+            'f1_score': f1,
+            'support': support
+        })
+        
+        return df
+    
+    def get_classification_report(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray
+    ) -> str:
+        """
+        Generate sklearn classification report.
+        
+        Args:
+            y_true: True labels
+            y_pred: Predicted labels
+            
+        Returns:
+            Classification report as string
+        """
+        return classification_report(y_true, y_pred, zero_division=0)
+    
+    def get_confusion_matrix(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        normalize: Optional[str] = None
+    ) -> Tuple[np.ndarray, List[str]]:
+        """
+        Calculate confusion matrix.
+        
+        Args:
+            y_true: True labels
+            y_pred: Predicted labels
+            normalize: Normalization ('true', 'pred', 'all', or None)
+            
+        Returns:
+            Tuple of (confusion matrix, class labels)
+        """
+        classes = np.unique(np.concatenate([y_true, y_pred]))
+        cm = confusion_matrix(y_true, y_pred, labels=classes, normalize=normalize)
+        return cm, classes.tolist()
+    
+    def plot_confusion_matrix(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        save_path: Optional[str] = None,
+        normalize: bool = False,
+        figsize: Tuple[int, int] = (10, 8)
+    ) -> None:
+        """
+        Plot confusion matrix heatmap.
+        
+        Args:
+            y_true: True labels
+            y_pred: Predicted labels
+            save_path: Path to save plot (optional)
+            normalize: Normalize by true labels
+            figsize: Figure size
+        """
+        cm, classes = self.get_confusion_matrix(
+            y_true, y_pred,
+            normalize='true' if normalize else None
+        )
+        
+        plt.figure(figsize=figsize)
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt='.2f' if normalize else 'd',
+            cmap='Blues',
+            xticklabels=classes,
+            yticklabels=classes,
+            cbar_kws={'label': 'Proportion' if normalize else 'Count'}
+        )
+        
+        plt.title('Confusion Matrix' + (' (Normalized)' if normalize else ''))
+        plt.ylabel('True Label')
+        plt.xlabel('Predicted Label')
+        plt.tight_layout()
+        
+        if save_path:
+            import os
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            print(f"✓ Saved confusion matrix to {save_path}")
+        else:
+            plt.show()
+        
+        plt.close()
+    
+    def generate_evaluation_report(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        model_name: str = "Model",
+        save_path: Optional[str] = None
+    ) -> str:
+        """
+        Generate comprehensive evaluation report.
+        
+        Args:
+            y_true: True labels
+            y_pred: Predicted labels
+            model_name: Name of model
+            save_path: Path to save report (optional)
+            
+        Returns:
+            Report as string
+        """
+        report_lines = []
+        report_lines.append("=" * 70)
+        report_lines.append(f"{model_name.upper()} - EVALUATION REPORT")
+        report_lines.append("=" * 70)
+        report_lines.append("")
+        
+        # Overall metrics
+        metrics = self.evaluate(y_true, y_pred)
+        report_lines.append("OVERALL METRICS:")
+        report_lines.append(f"  Accuracy:  {metrics['accuracy']:.4f}")
+        report_lines.append(f"  Precision: {metrics['precision']:.4f} (weighted)")
+        report_lines.append(f"  Recall:    {metrics['recall']:.4f} (weighted)")
+        report_lines.append(f"  F1-Score:  {metrics['f1_score']:.4f} (weighted)")
+        report_lines.append("")
+        
+        # Per-class metrics
+        report_lines.append("PER-CLASS METRICS:")
+        report_lines.append(self.get_classification_report(y_true, y_pred))
+        report_lines.append("")
+        
+        # Confusion matrix summary
+        cm, classes = self.get_confusion_matrix(y_true, y_pred)
+        report_lines.append("CONFUSION MATRIX:")
+        report_lines.append(f"  Classes: {classes}")
+        report_lines.append(f"  Total predictions: {len(y_pred)}")
+        report_lines.append(f"  Correct predictions: {np.trace(cm)}")
+        report_lines.append(f"  Incorrect predictions: {len(y_pred) - np.trace(cm)}")
+        report_lines.append("")
+        
+        report_lines.append("=" * 70)
+        
+        report = "\n".join(report_lines)
+        
+        if save_path:
+            import os
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            with open(save_path, 'w') as f:
+                f.write(report)
+            print(f"✓ Saved evaluation report to {save_path}")
+        
+        return report
+
+7.2 UPDATE training/__init__.py
+--------------------------------
+Update file: training/__init__.py
+
+"""
+Training Service Package
+
+Provides model training, evaluation, and registration functionality.
+"""
+
+from .data_loader import EmailDataLoader
+from .trainer import EmailClassifierTrainer
+from .evaluator import ModelEvaluator
+
+__all__ = ['EmailDataLoader', 'EmailClassifierTrainer', 'ModelEvaluator']
+
+================================================================================
+SECTION 8: DATABASE INTEGRATION
+================================================================================
+
+8.1 CREATE training/registry.py
+--------------------------------
+This module registers trained models in the Neon database.
+
+"""
+Model registry for database integration.
+
+Registers trained models in the model_versions table with:
+- Version identifier
+- Performance metrics
+- Configuration reference
+- Artifact paths
+"""
+
+import os
+from datetime import datetime
+from typing import Dict, Optional
+from sqlalchemy import text
+
+# Import database components from Step 1
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from database.connection import DatabaseConnection
+from database.models import ModelVersion
+from database.repository import ModelVersionRepository
+
+class ModelRegistry:
+    """
+    Register trained models in database.
+    
+    Example:
+        >>> registry = ModelRegistry()
+        >>> registry.register_model(
+        ...     version='1.0',
+        ...     model_type='logistic_regression',
+        ...     metrics={'accuracy': 0.89, 'f1_score': 0.87},
+        ...     model_path='artifacts/models/model_v1.0.pkl',
+        ...     vectorizer_path='artifacts/vectorizers/vectorizer_v1.0.pkl'
+        ... )
+    """
+    
+    def __init__(self):
+        """Initialize registry with database connection."""
+        self.db = DatabaseConnection()
+        self.repo = ModelVersionRepository()
+    
+    def register_model(
+        self,
+        version: str,
+        model_type: str,
+        metrics: Dict[str, float],
+        model_path: str,
+        vectorizer_path: str,
+        config_path: Optional[str] = None,
+        description: Optional[str] = None,
+        set_active: bool = False
+    ) -> int:
+        """
+        Register model in database.
+        
+        Args:
+            version: Model version identifier
+            model_type: Algorithm type
+            metrics: Performance metrics dictionary
+            model_path: Path to saved model file
+            vectorizer_path: Path to saved vectorizer
+            config_path: Path to config file (optional)
+            description: Model description (optional)
+            set_active: Set this model as active (default: False)
+            
+        Returns:
+            Model ID from database
+        """
+        print("\n" + "=" * 70)
+        print("REGISTERING MODEL IN DATABASE")
+        print("=" * 70)
+        
+        # Prepare model version data
+        model_data = {
+            'version': version,
+            'model_type': model_type,
+            'model_path': model_path,
+            'vectorizer_path': vectorizer_path,
+            'config_path': config_path,
+            'accuracy': metrics.get('accuracy'),
+            'precision_score': metrics.get('precision'),
+            'recall_score': metrics.get('recall'),
+            'f1_score': metrics.get('f1_score'),
+            'description': description or f"{model_type} v{version}",
+            'is_active': set_active,
+            'trained_at': datetime.now()
+        }
+        
+        print(f"  Version: {version}")
+        print(f"  Model type: {model_type}")
+        print(f"  Accuracy: {metrics.get('accuracy', 0):.4f}")
+        print(f"  F1-Score: {metrics.get('f1_score', 0):.4f}")
+        
+        # If setting as active, deactivate other models
+        if set_active:
+            print(f"  Setting as active model...")
+            with self.db.get_session() as session:
+                # Deactivate all models
+                session.execute(
+                    text("UPDATE model_versions SET is_active = FALSE")
+                )
+                session.commit()
+        
+        # Create model version record
+        model_version = self.repo.create_model_version(**model_data)
+        
+        print(f"  ✓ Registered as model ID: {model_version.id}")
+        print("=" * 70 + "\n")
+        
+        return model_version.id
+    
+    def get_active_model(self) -> Optional[ModelVersion]:
+        """
+        Get currently active model.
+        
+        Returns:
+            Active ModelVersion or None
+        """
+        return self.repo.get_active_model()
+    
+    def get_model_by_version(self, version: str) -> Optional[ModelVersion]:
+        """
+        Get model by version string.
+        
+        Args:
+            version: Version identifier
+            
+        Returns:
+            ModelVersion or None
+        """
+        models = self.repo.get_all_models()
+        for model in models:
+            if model.version == version:
+                return model
+        return None
+    
+    def list_all_models(self) -> list:
+        """
+        List all registered models.
+        
+        Returns:
+            List of ModelVersion objects
+        """
+        return self.repo.get_all_models()
+    
+    def set_model_active(self, model_id: int) -> None:
+        """
+        Set a model as active.
+        
+        Args:
+            model_id: Database ID of model to activate
+        """
+        with self.db.get_session() as session:
+            # Deactivate all
+            session.execute(
+                text("UPDATE model_versions SET is_active = FALSE")
+            )
+            # Activate target
+            session.execute(
+                text("UPDATE model_versions SET is_active = TRUE WHERE id = :id"),
+                {"id": model_id}
+            )
+            session.commit()
+        
+        print(f"✓ Set model {model_id} as active")
+    
+    def compare_models(self) -> None:
+        """Print comparison of all registered models."""
+        models = self.list_all_models()
+        
+        if not models:
+            print("No models registered yet.")
+            return
+        
+        print("\n" + "=" * 100)
+        print("MODEL COMPARISON")
+        print("=" * 100)
+        print(f"{'ID':<5} {'Version':<10} {'Type':<20} {'Accuracy':<10} {'F1':<10} {'Active':<8} {'Trained'}")
+        print("-" * 100)
+        
+        for model in models:
+            accuracy = f"{model.accuracy:.4f}" if model.accuracy else "N/A"
+            f1 = f"{model.f1_score:.4f}" if model.f1_score else "N/A"
+            active = "Yes" if model.is_active else "No"
+            trained = model.trained_at.strftime("%Y-%m-%d %H:%M") if model.trained_at else "N/A"
+            
+            print(f"{model.id:<5} {model.version:<10} {model.model_type:<20} {accuracy:<10} {f1:<10} {active:<8} {trained}")
+        
+        print("=" * 100 + "\n")
+
+8.2 UPDATE training/__init__.py
+--------------------------------
+Update file: training/__init__.py
+
+"""
+Training Service Package
+
+Provides model training, evaluation, and registration functionality.
+"""
+
+from .data_loader import EmailDataLoader
+from .trainer import EmailClassifierTrainer
+from .evaluator import ModelEvaluator
+from .registry import ModelRegistry
+
+__all__ = [
+    'EmailDataLoader',
+    'EmailClassifierTrainer',
+    'ModelEvaluator',
+    'ModelRegistry'
+]
+
+================================================================================
+SECTION 9: TRAINING PIPELINE ORCHESTRATION
+================================================================================
+
+9.1 CREATE train_model.py (Project Root)
+-----------------------------------------
+This script orchestrates the complete training workflow.
+
+"""
+Complete training pipeline for email classification.
+
+Usage:
+    python train_model.py --data data/sample_emails.csv --version 1.0 --model logistic_regression
+
+This script:
+1. Loads and validates data
+2. Splits into train/val/test sets
+3. Trains model with hyperparameter tuning
+4. Evaluates performance
+5. Saves model artifacts
+6. Registers in database
+"""
+
+import argparse
+import os
+import sys
+from datetime import datetime
+
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from training import EmailDataLoader, EmailClassifierTrainer, ModelEvaluator, ModelRegistry
+from feature_pipeline import PipelineConfig, ArtifactManager, get_default_config
+
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Train email classification model')
+    
+    parser.add_argument(
+        '--data',
+        type=str,
+        required=True,
+        help='Path to training data CSV file'
+    )
+    
+    parser.add_argument(
+        '--version',
+        type=str,
+        default=None,
+        help='Model version (default: auto-generate from timestamp)'
+    )
+    
+    parser.add_argument(
+        '--model',
+        type=str,
+        default='logistic_regression',
+        choices=['logistic_regression', 'random_forest', 'svm', 'naive_bayes'],
+        help='Model algorithm (default: logistic_regression)'
+    )
+    
+    parser.add_argument(
+        '--test-size',
+        type=float,
+        default=0.2,
+        help='Test set proportion (default: 0.2)'
+    )
+    
+    parser.add_argument(
+        '--val-size',
+        type=float,
+        default=0.1,
+        help='Validation set proportion (default: 0.1)'
+    )
+    
+    parser.add_argument(
+        '--no-tune',
+        action='store_true',
+        help='Disable hyperparameter tuning (faster but may reduce performance)'
+    )
+    
+    parser.add_argument(
+        '--max-features',
+        type=int,
+        default=5000,
+        help='Maximum TF-IDF features (default: 5000)'
+    )
+    
+    parser.add_argument(
+        '--set-active',
+        action='store_true',
+        help='Set this model as active in database'
+    )
+    
+    parser.add_argument(
+        '--description',
+        type=str,
+        default=None,
+        help='Model description'
+    )
+    
+    return parser.parse_args()
+
+def main():
+    """Main training pipeline."""
+    args = parse_arguments()
+    
+    print("\n" + "=" * 70)
+    print("EMAIL CLASSIFICATION MODEL TRAINING PIPELINE")
+    print("=" * 70)
+    print(f"Data: {args.data}")
+    print(f"Model: {args.model}")
+    print(f"Version: {args.version or 'auto-generate'}")
+    print("=" * 70 + "\n")
+    
+    # Initialize components
+    artifact_manager = ArtifactManager()
+    
+    # Generate version if not provided
+    if args.version is None:
+        args.version = datetime.now().strftime("%Y%m%d_%H%M%S")
+        print(f"Auto-generated version: {args.version}\n")
+    
+    # STEP 1: Load and validate data
+    print("\n" + "=" * 70)
+    print("STEP 1: DATA LOADING & VALIDATION")
+    print("=" * 70)
+    
+    loader = EmailDataLoader()
+    df = loader.load_csv(args.data)
+    validation_results = loader.validate_data(df)
+    
+    # Clean data if issues found
+    if validation_results['status'] == 'warning':
+        print("\nCleaning data...")
+        df = loader.clean_data(df)
+        loader.validate_data(df)
+    
+    # STEP 2: Split data
+    print("\n" + "=" * 70)
+    print("STEP 2: DATA SPLITTING")
+    print("=" * 70)
+    
+    splits = loader.split_data(
+        df,
+        test_size=args.test_size,
+        val_size=args.val_size,
+        random_state=42,
+        stratify=True
+    )
+    
+    X_train, y_train = splits['train']
+    X_val, y_val = splits['val']
+    X_test, y_test = splits['test']
+    
+    # STEP 3: Create pipeline configuration
+    print("\n" + "=" * 70)
+    print("STEP 3: PIPELINE CONFIGURATION")
+    print("=" * 70)
+    
+    config = get_default_config()
+    config.version = args.version
+    config.feature_extraction.max_features = args.max_features
+    config.description = args.description or f"{args.model} model v{args.version}"
+    
+    config_path = artifact_manager.get_config_path(args.version)
+    config.save(config_path)
+    print(f"✓ Saved configuration to {config_path}")
+    
+    # STEP 4: Train model
+    print("\n" + "=" * 70)
+    print("STEP 4: MODEL TRAINING")
+    print("=" * 70)
+    
+    trainer = EmailClassifierTrainer(pipeline_config=config)
+    
+    training_results = trainer.train(
+        train_texts=X_train.tolist(),
+        train_labels=y_train.tolist(),
+        model_type=args.model,
+        tune_hyperparams=not args.no_tune,
+        cv_folds=5,
+        val_texts=X_val.tolist() if len(X_val) > 0 else None,
+        val_labels=y_val.tolist() if len(y_val) > 0 else None
+    )
+    
+    # STEP 5: Evaluate on test set
+    print("\n" + "=" * 70)
+    print("STEP 5: MODEL EVALUATION")
+    print("=" * 70)
+    
+    evaluator = ModelEvaluator()
+    
+    # Predictions
+    y_pred = trainer.predict(X_test.tolist())
+    y_pred_proba = trainer.predict_proba(X_test.tolist())
+    
+    # Metrics
+    test_metrics = evaluator.evaluate(y_test.values, y_pred, y_pred_proba)
+    
+    print("\nTest Set Performance:")
+    print(f"  Accuracy:  {test_metrics['accuracy']:.4f}")
+    print(f"  Precision: {test_metrics['precision']:.4f}")
+    print(f"  Recall:    {test_metrics['recall']:.4f}")
+    print(f"  F1-Score:  {test_metrics['f1_score']:.4f}")
+    
+    # Classification report
+    print("\nDetailed Classification Report:")
+    print(evaluator.get_classification_report(y_test.values, y_pred))
+    
+    # Generate and save evaluation report
+    report_path = f"artifacts/reports/evaluation_report_v{args.version}.txt"
+    evaluator.generate_evaluation_report(
+        y_test.values,
+        y_pred,
+        model_name=f"{args.model} v{args.version}",
+        save_path=report_path
+    )
+    
+    # Plot and save confusion matrix
+    cm_path = f"artifacts/reports/confusion_matrix_v{args.version}.png"
+    evaluator.plot_confusion_matrix(
+        y_test.values,
+        y_pred,
+        save_path=cm_path,
+        normalize=True
+    )
+    
+    # STEP 6: Save model artifacts
+    print("\n" + "=" * 70)
+    print("STEP 6: SAVING ARTIFACTS")
+    print("=" * 70)
+    
+    model_path = artifact_manager.get_model_path(args.version)
+    trainer.save_model(model_path)
+    
+    # Vectorizer is saved inside the model package, but also save separately
+    vectorizer_path = artifact_manager.get_vectorizer_path(args.version)
+    trainer.feature_extractor.save(vectorizer_path)
+    
+    print(f"✓ Model saved to: {model_path}")
+    print(f"✓ Vectorizer saved to: {vectorizer_path}")
+    print(f"✓ Config saved to: {config_path}")
+    print(f"✓ Report saved to: {report_path}")
+    print(f"✓ Confusion matrix saved to: {cm_path}")
+    
+    # STEP 7: Register in database
+    print("\n" + "=" * 70)
+    print("STEP 7: DATABASE REGISTRATION")
+    print("=" * 70)
+    
+    registry = ModelRegistry()
+    model_id = registry.register_model(
+        version=args.version,
+        model_type=args.model,
+        metrics=test_metrics,
+        model_path=model_path,
+        vectorizer_path=vectorizer_path,
+        config_path=config_path,
+        description=config.description,
+        set_active=args.set_active
+    )
+    
+    print(f"✓ Registered in database with ID: {model_id}")
+    
+    # STEP 8: Summary
+    print("\n" + "=" * 70)
+    print("TRAINING COMPLETE - SUMMARY")
+    print("=" * 70)
+    print(f"Model Version: {args.version}")
+    print(f"Model Type: {args.model}")
+    print(f"Database ID: {model_id}")
+    print(f"\nPerformance:")
+    print(f"  Training samples: {len(X_train)}")
+    print(f"  Validation samples: {len(X_val)}")
+    print(f"  Test samples: {len(X_test)}")
+    print(f"  Test Accuracy: {test_metrics['accuracy']:.4f}")
+    print(f"  Test F1-Score: {test_metrics['f1_score']:.4f}")
+    print(f"\nArtifacts:")
+    print(f"  Model: {model_path}")
+    print(f"  Vectorizer: {vectorizer_path}")
+    print(f"  Config: {config_path}")
+    print(f"  Report: {report_path}")
+    print(f"  Confusion Matrix: {cm_path}")
+    
+    if args.set_active:
+        print(f"\n✓ This model is now ACTIVE in production")
+    else:
+        print(f"\n  Note: Use --set-active flag to make this model active")
+    
+    print("=" * 70 + "\n")
+    
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+9.2 USAGE EXAMPLES
+------------------
+How to use the training pipeline:
+
+# Basic training (auto version, logistic regression)
+python train_model.py --data data/sample_emails.csv
+
+# Train specific model type
+python train_model.py --data data/sample_emails.csv --model random_forest
+
+# Custom version and set as active
+python train_model.py --data data/sample_emails.csv --version 1.0 --set-active
+
+# Train without hyperparameter tuning (faster)
+python train_model.py --data data/sample_emails.csv --no-tune
+
+# Custom data split ratios
+python train_model.py --data data/sample_emails.csv --test-size 0.3 --val-size 0.15
+
+# Reduce features for faster training
+python train_model.py --data data/sample_emails.csv --max-features 1000
+
+# Full example with all options
+python train_model.py \
+    --data data/sample_emails.csv \
+    --version 1.0 \
+    --model logistic_regression \
+    --test-size 0.2 \
+    --val-size 0.1 \
+    --max-features 5000 \
+    --set-active \
+    --description "Production model v1.0"
+
+================================================================================
+SECTION 10: TESTING SUITE
+================================================================================
+
+10.1 CREATE tests/test_training.py
+-----------------------------------
+Automated tests for Step 3 components.
+
+"""
+Test suite for training service (Step 3).
+
+Tests:
+- Data loading and validation
+- Model training
+- Model evaluation
+- Database registration
+- Complete pipeline
+"""
+
+import os
+import sys
+import unittest
+import tempfile
+import shutil
+import pandas as pd
+import numpy as np
+
+# Add project root to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from training import EmailDataLoader, EmailClassifierTrainer, ModelEvaluator, ModelRegistry
+from feature_pipeline import get_default_config
+
+class TestEmailDataLoader(unittest.TestCase):
+    """Test EmailDataLoader functionality."""
+    
+    def setUp(self):
+        """Create temporary test data."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.test_csv = os.path.join(self.temp_dir, 'test_data.csv')
+        
+        # Create sample CSV
+        data = {
+            'email_id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            'text': [
+                'urgent meeting tomorrow',
+                'project update needed',
+                'please review document',
+                'spam advertisement',
+                'system down critical',
+                'weekly team sync',
+                'report attached',
+                'get rich quick',
+                'server maintenance',
+                'budget approval'
+            ],
+            'category': [
+                'meeting', 'update', 'report', 'spam', 'incident',
+                'meeting', 'report', 'spam', 'incident', 'approval'
+            ]
+        }
+        df = pd.DataFrame(data)
+        df.to_csv(self.test_csv, index=False)
+        
+        self.loader = EmailDataLoader()
+    
+    def tearDown(self):
+        """Clean up temp directory."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_load_csv(self):
+        """Test CSV loading."""
+        df = self.loader.load_csv(self.test_csv)
+        self.assertEqual(len(df), 10)
+        self.assertIn('text', df.columns)
+        self.assertIn('category', df.columns)
+    
+    def test_validate_data(self):
+        """Test data validation."""
+        df = self.loader.load_csv(self.test_csv)
+        validation = self.loader.validate_data(df)
+        
+        self.assertEqual(validation['total_records'], 10)
+        self.assertEqual(validation['missing_text'], 0)
+        self.assertIn('class_distribution', validation)
+    
+    def test_split_data(self):
+        """Test data splitting."""
+        df = self.loader.load_csv(self.test_csv)
+        splits = self.loader.split_data(df, test_size=0.2, val_size=0.1)
+        
+        self.assertIn('train', splits)
+        self.assertIn('val', splits)
+        self.assertIn('test', splits)
+        
+        X_train, y_train = splits['train']
+        X_test, y_test = splits['test']
+        
+        # Check total samples preserved
+        total = len(X_train) + len(splits['val'][0]) + len(X_test)
+        self.assertEqual(total, 10)
+
+class TestEmailClassifierTrainer(unittest.TestCase):
+    """Test EmailClassifierTrainer functionality."""
+    
+    def setUp(self):
+        """Set up test data and trainer."""
+        self.temp_dir = tempfile.mkdtemp()
+        
+        self.train_texts = [
+            'urgent meeting tomorrow',
+            'project status update',
+            'spam advertisement',
+            'critical system down',
+            'team meeting friday',
+            'please update project',
+            'click here to win',
+            'server outage detected'
+        ]
+        self.train_labels = [
+            'meeting', 'update', 'spam', 'incident',
+            'meeting', 'update', 'spam', 'incident'
+        ]
+        
+        self.config = get_default_config()
+        self.trainer = EmailClassifierTrainer(pipeline_config=self.config)
+    
+    def tearDown(self):
+        """Clean up."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_train_logistic_regression(self):
+        """Test training logistic regression."""
+        results = self.trainer.train(
+            train_texts=self.train_texts,
+            train_labels=self.train_labels,
+            model_type='logistic_regression',
+            tune_hyperparams=False
+        )
+        
+        self.assertIsNotNone(self.trainer.model)
+        self.assertIsNotNone(self.trainer.feature_extractor)
+        self.assertIn('train_accuracy', results)
+    
+    def test_predict(self):
+        """Test prediction."""
+        self.trainer.train(
+            train_texts=self.train_texts,
+            train_labels=self.train_labels,
+            model_type='logistic_regression',
+            tune_hyperparams=False
+        )
+        
+        test_texts = ['urgent meeting', 'spam offer']
+        predictions = self.trainer.predict(test_texts)
+        
+        self.assertEqual(len(predictions), 2)
+    
+    def test_save_load_model(self):
+        """Test model save/load."""
+        self.trainer.train(
+            train_texts=self.train_texts,
+            train_labels=self.train_labels,
+            model_type='logistic_regression',
+            tune_hyperparams=False
+        )
+        
+        model_path = os.path.join(self.temp_dir, 'test_model.pkl')
+        self.trainer.save_model(model_path)
+        
+        # Load model
+        loaded_trainer = EmailClassifierTrainer.load_model(model_path)
+        
+        # Predict with loaded model
+        test_texts = ['urgent meeting']
+        predictions = loaded_trainer.predict(test_texts)
+        
+        self.assertEqual(len(predictions), 1)
+
+class TestModelEvaluator(unittest.TestCase):
+    """Test ModelEvaluator functionality."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.y_true = np.array(['meeting', 'spam', 'meeting', 'incident', 'spam'])
+        self.y_pred = np.array(['meeting', 'meeting', 'meeting', 'incident', 'spam'])
+        self.evaluator = ModelEvaluator()
+    
+    def tearDown(self):
+        """Clean up."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_evaluate(self):
+        """Test metric calculation."""
+        metrics = self.evaluator.evaluate(self.y_true, self.y_pred)
+        
+        self.assertIn('accuracy', metrics)
+        self.assertIn('precision', metrics)
+        self.assertIn('recall', metrics)
+        self.assertIn('f1_score', metrics)
+        
+        self.assertGreaterEqual(metrics['accuracy'], 0.0)
+        self.assertLessEqual(metrics['accuracy'], 1.0)
+    
+    def test_confusion_matrix(self):
+        """Test confusion matrix generation."""
+        cm, classes = self.evaluator.get_confusion_matrix(self.y_true, self.y_pred)
+        
+        self.assertEqual(cm.shape[0], len(classes))
+        self.assertEqual(cm.shape[1], len(classes))
+    
+    def test_plot_confusion_matrix(self):
+        """Test confusion matrix plotting."""
+        save_path = os.path.join(self.temp_dir, 'cm.png')
+        
+        self.evaluator.plot_confusion_matrix(
+            self.y_true,
+            self.y_pred,
+            save_path=save_path
+        )
+        
+        self.assertTrue(os.path.exists(save_path))
+
+def run_tests():
+    """Run all tests."""
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    
+    suite.addTests(loader.loadTestsFromTestCase(TestEmailDataLoader))
+    suite.addTests(loader.loadTestsFromTestCase(TestEmailClassifierTrainer))
+    suite.addTests(loader.loadTestsFromTestCase(TestModelEvaluator))
+    
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    
+    print("\n" + "=" * 70)
+    print("TEST SUMMARY")
+    print("=" * 70)
+    print(f"Tests run: {result.testsRun}")
+    print(f"Successes: {result.testsRun - len(result.failures) - len(result.errors)}")
+    print(f"Failures: {len(result.failures)}")
+    print(f"Errors: {len(result.errors)}")
+    print("=" * 70)
+    
+    return result.wasSuccessful()
+
+if __name__ == "__main__":
+    success = run_tests()
+    sys.exit(0 if success else 1)
+
+================================================================================
+SECTION 11: VERIFICATION CHECKLIST
+================================================================================
+
+11.1 ENVIRONMENT VERIFICATION
+------------------------------
+Verify all dependencies installed:
+
+pip list | Select-String "pandas|imbalanced-learn|matplotlib|seaborn"
+
+Expected:
+imbalanced-learn   0.11.0
+matplotlib         3.8.2
+pandas             2.1.3
+seaborn            0.13.0
+
+11.2 FILE STRUCTURE CHECK
+--------------------------
+Verify all files created:
+
+Get-ChildItem -Recurse -File | Select-Object FullName
+
+Expected files:
+✓ data/sample_emails.csv
+✓ training/__init__.py
+✓ training/data_loader.py
+✓ training/trainer.py
+✓ training/evaluator.py
+✓ training/registry.py
+✓ train_model.py
+✓ tests/test_training.py
+
+11.3 IMPORT CHECK
+-----------------
+Verify modules importable:
+
+python -c "from training import EmailDataLoader, EmailClassifierTrainer, ModelEvaluator, ModelRegistry; print('✓ All imports successful')"
+
+Expected output:
+✓ All imports successful
+
+11.4 DATABASE CONNECTION CHECK
+-------------------------------
+Verify database connectivity:
+
+python -c "from database.connection import DatabaseConnection; db = DatabaseConnection(); db.test_connection(); print('✓ Database connected')"
+
+Expected output:
+Connected to PostgreSQL: PostgreSQL 16.x...
+✓ Database connected
+
+11.5 RUN TESTS
+--------------
+Execute Step 3 test suite:
+
+python tests/test_training.py
+
+Expected output:
+test_confusion_matrix ... ok
+test_evaluate ... ok
+test_load_csv ... ok
+test_predict ... ok
+test_save_load_model ... ok
+test_split_data ... ok
+test_train_logistic_regression ... ok
+test_validate_data ... ok
+----------------------------------------------------------------------
+Ran 8 tests in X.XXs
+
+OK
+
+11.6 TRAIN TEST MODEL
+---------------------
+Train a test model on sample data:
+
+python train_model.py --data data/sample_emails.csv --version test --model logistic_regression --no-tune
+
+Expected output:
+- Data loaded successfully
+- Model trained
+- Metrics calculated
+- Artifacts saved
+- Model registered in database
+
+Check artifacts created:
+dir artifacts\models\model_vtest.pkl
+dir artifacts\vectorizers\vectorizer_vtest.pkl
+dir artifacts\configs\config_vtest.json
+dir artifacts\reports\evaluation_report_vtest.txt
+dir artifacts\reports\confusion_matrix_vtest.png
+
+11.7 VERIFY DATABASE REGISTRATION
+----------------------------------
+Check model registered in database:
+
+python -c "from training import ModelRegistry; registry = ModelRegistry(); registry.compare_models()"
+
+Expected output:
+Model comparison table showing your test model
+
+11.8 COMPLETE CHECKLIST
+------------------------
+[ ] All dependencies installed (4 new packages)
+[ ] All files created in correct locations
+[ ] All modules import successfully
+[ ] Database connection works
+[ ] Test suite passes (8 tests)
+[ ] Sample model trained successfully
+[ ] Artifacts saved correctly
+[ ] Model registered in database
+[ ] Confusion matrix image generated
+[ ] Evaluation report saved
+
+If ALL boxes checked: Step 3 is COMPLETE! ✓
+
+================================================================================
+SECTION 12: TROUBLESHOOTING GUIDE
+================================================================================
+
+12.1 DATA LOADING ERRORS
+-------------------------
+Problem: FileNotFoundError when loading data
+Solution: Check file path is correct and file exists
+  dir data\sample_emails.csv
+
+Problem: "Missing required columns" error
+Solution: CSV must have 'text' and 'category' columns
+  Check CSV header row matches expected format
+
+Problem: UnicodeDecodeError when loading CSV
+Solution: Specify encoding explicitly:
+  loader.load_csv('data/file.csv', encoding='utf-8-sig')
+
+12.2 TRAINING ERRORS
+--------------------
+Problem: "ValueError: empty vocabulary"
+Solution: Not enough unique words. Solutions:
+  - Use more training data
+  - Reduce min_df: --max-features 1000
+  - Check data isn't all duplicates
+
+Problem: "ValueError: y contains X classes, but estimator expects Y"
+Solution: Mismatch between training and test labels
+  - Ensure test set has same categories as training
+  - Check for typos in category names
+
+Problem: Training very slow (hours)
+Solution: 
+  - Disable hyperparameter tuning: --no-tune
+  - Reduce features: --max-features 1000
+  - Use simpler model: --model naive_bayes
+
+Problem: Memory error during training
+Solution:
+  - Reduce max_features
+  - Use smaller dataset
+  - Close other applications
+
+12.3 EVALUATION ERRORS
+----------------------
+Problem: Confusion matrix image not saved
+Solution: Check matplotlib backend:
+  matplotlib.use('Agg') should be set in evaluator.py
+
+Problem: Division by zero in metrics
+Solution: Some classes have zero samples in test set
+  - Use stratified splitting (already default)
+  - Increase test set size
+
+12.4 DATABASE ERRORS
+--------------------
+Problem: "Table 'model_versions' doesn't exist"
+Solution: Step 1 schema not created. Run:
+  Execute create_schema.sql in Neon SQL Editor
+
+Problem: "Connection refused" to database
+Solution: Check .env credentials:
+  - DB_HOST correct
+  - DB_USER correct
+  - DB_PASSWORD correct
+  - DB_SSLMODE=require
+
+Problem: "Duplicate key value" when registering model
+Solution: Model version already exists
+  - Use different version name: --version 1.1
+  - Or delete old model from database
+
+12.5 ARTIFACT ERRORS
+--------------------
+Problem: "No such file or directory" when saving artifacts
+Solution: Create directories:
+  New-Item -ItemType Directory -Force -Path "artifacts\models"
+  New-Item -ItemType Directory -Force -Path "artifacts\reports"
+
+Problem: Loaded model produces different predictions
+Solution: 
+  - Ensure same scikit-learn version
+  - Check model file not corrupted
+  - Verify vectorizer loaded correctly
+
+12.6 POOR MODEL PERFORMANCE
+---------------------------
+Problem: Accuracy < 50% (worse than random)
+Solution: Possible causes:
+  - Data quality issues (labels incorrect)
+  - Too few training samples per category
+  - Categories too similar (hard to distinguish)
+  - Preprocessing too aggressive (losing information)
+
+Fixes:
+  - Review and clean labels
+  - Collect more training data
+  - Try different model: --model random_forest
+  - Reduce preprocessing (edit pipeline config)
+
+Problem: High training accuracy, low test accuracy (overfitting)
+Solution:
+  - Use regularization (already in Logistic Regression)
+  - Reduce max_features
+  - Collect more training data
+  - Use cross-validation (already done)
+
+Problem: All predictions are same class
+Solution: Severe class imbalance
+  - Check class distribution (should be balanced)
+  - Use class weights (already enabled with 'balanced')
+  - Oversample minority class with SMOTE
+
+12.7 GETTING HELP
+-----------------
+If issues persist:
+1. Check all Step 1 & 2 components working
+2. Verify sample data format matches expected
+3. Review error messages carefully
+4. Check Python version (3.8+)
+5. Ensure virtual environment activated
+6. Try simpler configuration first (--no-tune, fewer features)
+
+================================================================================
+SECTION 13: NEXT STEPS (STEP 4 PREVIEW)
+================================================================================
+
+13.1 WHAT'S NEXT
+----------------
+After Step 3 completion, you'll move to Step 4: Inference Service
+
+Step 4 will build:
+- Fast email categorization service
+- Load trained model from database
+- Predict categories for new emails
+- Store predictions in database
+- Confidence scoring and threshold handling
+- Batch prediction support
+
+13.2 WHAT STEP 4 WILL COVER
+---------------------------
+1. Inference Service
+   - Load active model from database
+   - Categorize new emails efficiently
+   - Handle edge cases (low confidence, unknown patterns)
+   - Batch processing support
+
+2. Prediction Storage
+   - Save predictions to database (predictions table)
+   - Link to source email
+   - Store confidence scores
+   - Track inference metadata (timing, model version)
+
+3. Performance Optimization
+   - Model caching (don't reload every time)
+   - Feature extraction optimization
+   - Batch prediction for multiple emails
+   - Response time monitoring
+
+4. Error Handling
+   - Handle malformed input
+   - Fallback for low-confidence predictions
+   - Logging and debugging support
+
+13.3 EXAMPLE WORKFLOW (STEP 4 PREVIEW)
+--------------------------------------
+What you'll be able to do after Step 4:
+
+from inference import EmailCategorizer
+
+# Initialize categorizer (loads active model from database)
+categorizer = EmailCategorizer()
+
+# Categorize single email
+email_text = "URGENT: Server down, need immediate help"
+prediction = categorizer.predict(email_text)
+
+print(f"Category: {prediction['category']}")
+print(f"Confidence: {prediction['confidence']:.2%}")
+# Output:
+# Category: incident
+# Confidence: 94.5%
+
+# Categorize multiple emails (batch)
+emails = [
+    "Team meeting moved to Thursday",
+    "Q4 report attached for review",
+    "Amazing discount offer click here"
+]
+predictions = categorizer.predict_batch(emails)
+
+for i, pred in enumerate(predictions):
+    print(f"Email {i+1}: {pred['category']} ({pred['confidence']:.2%})")
+# Output:
+# Email 1: meeting (89.3%)
+# Email 2: report (91.7%)
+# Email 3: spam (97.2%)
+
+# Store prediction in database
+categorizer.predict_and_store(
+    email_id=12345,
+    email_text=email_text
+)
+# Saves to predictions table with email_id, category, confidence, model_version
+
+13.4 WHEN TO START STEP 4
+--------------------------
+You're ready for Step 4 when:
+✓ All Step 3 tests passing (8/8)
+✓ At least one model trained and registered
+✓ Model achieves acceptable accuracy (>70% for most use cases)
+✓ Confusion matrix and metrics reviewed
+✓ Database connection working
+
+13.5 BEFORE STEP 4: MODEL REVIEW
+---------------------------------
+Review your trained model:
+
+1. Check performance metrics
+   - Is accuracy acceptable for your use case?
+   - Which categories are confused? (see confusion matrix)
+   - Is any category performing poorly?
+
+2. Review feature importance
+   python -c "
+from training import EmailClassifierTrainer
+trainer = EmailClassifierTrainer.load_model('artifacts/models/model_vtest.pkl')
+importance = trainer.get_feature_importance(top_n=10)
+for category, features in importance.items():
+    print(f'\n{category}:')
+    for word, score in features[:5]:
+        print(f'  {word}: {score:.3f}')
+   "
+
+3. Test predictions manually
+   python -c "
+from training import EmailClassifierTrainer
+trainer = EmailClassifierTrainer.load_model('artifacts/models/model_vtest.pkl')
+test_emails = [
+    'urgent server down',
+    'team meeting tomorrow',
+    'click here to win'
+]
+predictions = trainer.predict(test_emails)
+for email, pred in zip(test_emails, predictions):
+    print(f'{email} -> {pred}')
+   "
+
+4. Retrain if needed
+   - If performance poor, collect more data
+   - Try different algorithms
+   - Adjust hyperparameters
+   - Review data quality
+
+13.6 ESTIMATED TIMELINE
+-----------------------
+Step 4 Implementation: 3-4 hours
+- Inference service code: 1-2 hours
+- Database integration: 1 hour
+- Testing and validation: 1 hour
+
+Step 4 Documentation: Comprehensive guide (similar to Steps 2 & 3)
+
+================================================================================
+END OF STEP 3 GUIDE
+================================================================================
+
+SUMMARY:
+--------
+You now have a complete model training service with:
+
+✓ Data loading and validation (EmailDataLoader)
+✓ Multiple algorithms (Logistic Regression, Random Forest, SVM, Naive Bayes)
+✓ Hyperparameter tuning (GridSearchCV)
+✓ Comprehensive evaluation (accuracy, precision, recall, F1, confusion matrix)
+✓ Database integration (model registry)
+✓ Artifact management (models, vectorizers, configs, reports)
+✓ Automated tests (8 tests)
+✓ Complete training pipeline (train_model.py)
+
+CRITICAL REMINDERS:
+-------------------
+1. ALWAYS validate data before training (check for missing values, balance)
+2. Use stratified splitting to maintain class distribution
+3. Save configuration with each model for reproducibility
+4. Register models in database for tracking and deployment
+5. Review confusion matrix to identify problematic categories
+6. Test model performance before deploying to production
+
+NEXT ACTION:
+------------
+1. Review your trained model performance
+2. If acceptable (accuracy >70%), proceed to Step 4
+3. If not acceptable, retrain with more data or different settings
+
+When ready for Step 4, request: "Provide Step 4 guide in single .txt file"
+
+Good luck with Step 3 implementation!
+If you encounter issues, refer to Section 12 (Troubleshooting Guide).
+
+================================================================================

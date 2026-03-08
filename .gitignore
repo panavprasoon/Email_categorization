@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# SQLite files
+*.db
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Pip cache
+pip-wheel-metadata/
+
+# Distribution build
+dist/
+build/
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+
+# Pytest
+.pytest_cache/
+
+# Ignore artifacts if they shouldn't be committed
+artifacts/

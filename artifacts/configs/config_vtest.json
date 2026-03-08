@@ -1,0 +1,25 @@
+{
+  "version": "test",
+  "created_at": "2026-03-07T19:05:42.561464",
+  "preprocessing": {
+    "lowercase": true,
+    "remove_punctuation": true,
+    "remove_numbers": false,
+    "remove_urls": true,
+    "remove_emails": true,
+    "remove_stopwords": true,
+    "apply_lemmatization": true,
+    "min_word_length": 2,
+    "max_word_length": null
+  },
+  "feature_extraction": {
+    "max_features": 5000,
+    "ngram_range": [
+      1,
+      2
+    ],
+    "min_df": 2,
+    "max_df": 0.95
+  },
+  "description": "logistic_regression model vtest"
+}

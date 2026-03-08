@@ -1,0 +1,2294 @@
+================================================================================
+STEP 2: EMAIL PREPROCESSING & FEATURE EXTRACTION PIPELINE
+COMPLETE IMPLEMENTATION GUIDE
+================================================================================
+
+VERSION: 1.0
+DATE: March 2, 2026
+PROJECT: Enterprise Email Categorization System
+PREREQUISITES: Step 1 Complete (Neon Database Setup)
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+SECTION 1: Overview & Architecture
+SECTION 2: Environment Setup
+SECTION 3: Download NLTK Data
+SECTION 4: Text Preprocessing Module
+SECTION 5: Feature Extraction Module
+SECTION 6: Pipeline Configuration
+SECTION 7: Artifact Management
+SECTION 8: Package Initialization
+SECTION 9: Testing Suite
+SECTION 10: Verification Checklist
+SECTION 11: Troubleshooting Guide
+SECTION 12: Next Steps (Step 3 Preview)
+
+================================================================================
+SECTION 1: OVERVIEW & ARCHITECTURE
+================================================================================
+
+1.1 PURPOSE
+-----------
+Step 2 builds the preprocessing and feature extraction pipeline that transforms
+raw email text into numerical feature vectors suitable for machine learning.
+This pipeline ensures CONSISTENCY between training and inference - the same
+preprocessing steps must be applied identically in both phases.
+
+1.2 KEY COMPONENTS
+------------------
+- TextPreprocessor: Cleans and normalizes email text
+- EmailFeatureExtractor: Converts text to TF-IDF feature vectors
+- PipelineConfig: Manages preprocessing/extraction configurations
+- ArtifactManager: Organizes saved models and vectorizers
+- Test Suite: Validates all pipeline components
+
+1.3 CRITICAL REQUIREMENTS
+-------------------------
+✓ Preprocessing consistency (training vs inference)
+✓ Configuration versioning (reproducibility)
+✓ Artifact persistence (models, vectorizers, configs)
+✓ Comprehensive testing (edge cases, consistency)
+✓ Cloud-compatible (no local storage dependencies)
+
+1.4 FOLDER STRUCTURE
+--------------------
+After Step 2 completion, your project structure will be:
+
+email_categorization_system/
+├── .env                              # Neon credentials (Step 1)
+├── config.py                         # Configuration management (Step 1)
+├── requirements.txt                  # Python dependencies (updated)
+├── download_nltk_data.py            # NLTK data download script (NEW)
+├── database/                         # Database layer (Step 1)
+│   ├── __init__.py
+│   ├── connection.py
+│   ├── models.py
+│   ├── repository.py
+│   └── create_schema.sql
+├── feature_pipeline/                 # Preprocessing pipeline (NEW)
+│   ├── __init__.py
+│   ├── preprocessing.py              # TextPreprocessor class
+│   ├── feature_extractor.py          # EmailFeatureExtractor class
+│   ├── pipeline_config.py            # Configuration classes
+│   └── artifact_manager.py           # Save/load utilities
+├── artifacts/                        # Saved models/vectorizers (NEW)
+│   ├── models/                       # Trained models
+│   ├── vectorizers/                  # TF-IDF vectorizers
+│   └── configs/                      # Pipeline configurations
+└── tests/                            # Test suite (NEW)
+    ├── __init__.py
+    └── test_preprocessing.py         # Pipeline tests
+
+================================================================================
+SECTION 2: ENVIRONMENT SETUP
+================================================================================
+
+2.1 UPDATE requirements.txt
+----------------------------
+Add ML dependencies to your existing requirements.txt:
+
+# Existing dependencies (Step 1)
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.23
+python-dotenv==1.0.0
+
+# NEW: Machine Learning dependencies (Step 2)
+scikit-learn==1.3.2
+numpy==1.26.2
+nltk==3.8.1
+joblib==1.3.2
+regex==2023.10.3
+
+2.2 INSTALL DEPENDENCIES
+------------------------
+Activate your virtual environment and install:
+
+# Windows PowerShell
+cd C:\path\to\email_categorization_system
+.\venv\Scripts\Activate
+pip install -r requirements.txt
+
+Expected output:
+- Successfully installed scikit-learn-1.3.2
+- Successfully installed numpy-1.26.2
+- Successfully installed nltk-3.8.1
+- Successfully installed joblib-1.3.2
+- Successfully installed regex-2023.10.3
+
+2.3 CREATE FOLDER STRUCTURE
+---------------------------
+Create new directories:
+
+# PowerShell
+New-Item -ItemType Directory -Force -Path "feature_pipeline"
+New-Item -ItemType Directory -Force -Path "artifacts\models"
+New-Item -ItemType Directory -Force -Path "artifacts\vectorizers"
+New-Item -ItemType Directory -Force -Path "artifacts\configs"
+New-Item -ItemType Directory -Force -Path "tests"
+
+Verify:
+Get-ChildItem -Directory
+
+You should see:
+- database/
+- feature_pipeline/
+- artifacts/
+- tests/
+
+================================================================================
+SECTION 3: DOWNLOAD NLTK DATA
+================================================================================
+
+3.1 CREATE download_nltk_data.py
+---------------------------------
+Create file: download_nltk_data.py (in project root)
+
+"""
+Download required NLTK data packages for text preprocessing.
+
+Required packages:
+- punkt: Sentence tokenizer
+- stopwords: Common words to filter (English)
+- wordnet: Lexical database for lemmatization
+- averaged_perceptron_tagger: POS tagging (for lemmatization)
+
+Run this once after installing nltk.
+"""
+
+import nltk
+import sys
+
+def download_nltk_data():
+    """Download all required NLTK data packages."""
+    packages = [
+        'punkt',           # Tokenizer
+        'stopwords',       # Stopwords list
+        'wordnet',         # WordNet lexical database
+        'averaged_perceptron_tagger'  # POS tagger
+    ]
+    
+    print("Downloading NLTK data packages...")
+    print("=" * 60)
+    
+    for package in packages:
+        try:
+            print(f"\nDownloading '{package}'...")
+            nltk.download(package, quiet=False)
+            print(f"✓ Successfully downloaded '{package}'")
+        except Exception as e:
+            print(f"✗ Error downloading '{package}': {e}", file=sys.stderr)
+            return False
+    
+    print("\n" + "=" * 60)
+    print("All NLTK data packages downloaded successfully!")
+    print("You can now use the preprocessing pipeline.")
+    return True
+
+if __name__ == "__main__":
+    success = download_nltk_data()
+    sys.exit(0 if success else 1)
+
+3.2 RUN NLTK DATA DOWNLOAD
+---------------------------
+Execute the script:
+
+python download_nltk_data.py
+
+Expected output:
+[nltk_data] Downloading package punkt to C:\Users\...\nltk_data...
+[nltk_data]   Unzipping tokenizers\punkt.zip.
+✓ Successfully downloaded 'punkt'
+[nltk_data] Downloading package stopwords to C:\Users\...\nltk_data...
+[nltk_data]   Unzipping corpora\stopwords.zip.
+✓ Successfully downloaded 'stopwords'
+[nltk_data] Downloading package wordnet to C:\Users\...\nltk_data...
+✓ Successfully downloaded 'wordnet'
+[nltk_data] Downloading package averaged_perceptron_tagger...
+[nltk_data]   Unzipping taggers\averaged_perceptron_tagger.zip.
+✓ Successfully downloaded 'averaged_perceptron_tagger'
+
+All NLTK data packages downloaded successfully!
+
+NOTE: This downloads ~50MB of data to your user directory. Only needs to run once.
+
+================================================================================
+SECTION 4: TEXT PREPROCESSING MODULE
+================================================================================
+
+4.1 CREATE feature_pipeline/preprocessing.py
+---------------------------------------------
+This module handles text cleaning and normalization.
+
+"""
+Text preprocessing utilities for email categorization.
+
+This module provides the TextPreprocessor class which handles:
+- Lowercase conversion
+- URL and email address removal
+- Punctuation and number removal
+- Stopword filtering
+- Lemmatization
+- Custom word length constraints
+
+CRITICAL: Preprocessing must be IDENTICAL for training and inference.
+Always use the same configuration for both phases.
+"""
+
+import re
+import string
+from typing import List, Optional
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+
+class TextPreprocessor:
+    """
+    Configurable text preprocessing for email content.
+    
+    Features:
+    - Lowercase conversion
+    - URL/email removal
+    - Punctuation/number removal
+    - Stopword filtering
+    - Lemmatization
+    - Word length filtering
+    
+    Example:
+        >>> preprocessor = TextPreprocessor(
+        ...     lowercase=True,
+        ...     remove_stopwords=True,
+        ...     apply_lemmatization=True
+        ... )
+        >>> text = "Check this URL: https://example.com for details!"
+        >>> preprocessor.clean_text(text)
+        'check url detail'
+    """
+    
+    def __init__(
+        self,
+        lowercase: bool = True,
+        remove_punctuation: bool = True,
+        remove_numbers: bool = False,
+        remove_urls: bool = True,
+        remove_emails: bool = True,
+        remove_stopwords: bool = True,
+        apply_lemmatization: bool = True,
+        min_word_length: int = 2,
+        max_word_length: Optional[int] = None,
+        custom_stopwords: Optional[List[str]] = None
+    ):
+        """
+        Initialize text preprocessor with configuration.
+        
+        Args:
+            lowercase: Convert text to lowercase
+            remove_punctuation: Remove punctuation characters
+            remove_numbers: Remove numeric digits
+            remove_urls: Remove HTTP/HTTPS URLs
+            remove_emails: Remove email addresses
+            remove_stopwords: Remove common stopwords (English)
+            apply_lemmatization: Apply word lemmatization
+            min_word_length: Minimum word length to keep
+            max_word_length: Maximum word length to keep (None = no limit)
+            custom_stopwords: Additional stopwords to remove
+        """
+        self.lowercase = lowercase
+        self.remove_punctuation = remove_punctuation
+        self.remove_numbers = remove_numbers
+        self.remove_urls = remove_urls
+        self.remove_emails = remove_emails
+        self.remove_stopwords = remove_stopwords
+        self.apply_lemmatization = apply_lemmatization
+        self.min_word_length = min_word_length
+        self.max_word_length = max_word_length
+        
+        # Initialize stopwords
+        self.stopwords_set = set()
+        if self.remove_stopwords:
+            try:
+                self.stopwords_set = set(stopwords.words('english'))
+            except LookupError:
+                print("Warning: NLTK stopwords not found. Run download_nltk_data.py")
+                self.stopwords_set = set()
+        
+        # Add custom stopwords
+        if custom_stopwords:
+            self.stopwords_set.update(custom_stopwords)
+        
+        # Initialize lemmatizer
+        self.lemmatizer = None
+        if self.apply_lemmatization:
+            try:
+                self.lemmatizer = WordNetLemmatizer()
+            except LookupError:
+                print("Warning: NLTK wordnet not found. Run download_nltk_data.py")
+                self.lemmatizer = None
+        
+        # Regex patterns
+        self.url_pattern = re.compile(
+            r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        )
+        self.email_pattern = re.compile(
+            r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        )
+    
+    def clean_text(self, text: str) -> str:
+        """
+        Clean and preprocess a single text string.
+        
+        Args:
+            text: Raw text to preprocess
+            
+        Returns:
+            Cleaned and preprocessed text
+            
+        Example:
+            >>> preprocessor = TextPreprocessor()
+            >>> preprocessor.clean_text("Visit http://example.com NOW!")
+            'visit'
+        """
+        if not text or not isinstance(text, str):
+            return ""
+        
+        # Remove URLs
+        if self.remove_urls:
+            text = self.url_pattern.sub(' ', text)
+        
+        # Remove email addresses
+        if self.remove_emails:
+            text = self.email_pattern.sub(' ', text)
+        
+        # Convert to lowercase
+        if self.lowercase:
+            text = text.lower()
+        
+        # Remove punctuation
+        if self.remove_punctuation:
+            text = text.translate(str.maketrans('', '', string.punctuation))
+        
+        # Remove numbers
+        if self.remove_numbers:
+            text = re.sub(r'\d+', ' ', text)
+        
+        # Tokenize
+        try:
+            tokens = word_tokenize(text)
+        except LookupError:
+            # Fallback if punkt not available
+            tokens = text.split()
+        
+        # Filter stopwords
+        if self.remove_stopwords:
+            tokens = [t for t in tokens if t not in self.stopwords_set]
+        
+        # Apply lemmatization
+        if self.apply_lemmatization and self.lemmatizer:
+            tokens = [self.lemmatizer.lemmatize(t) for t in tokens]
+        
+        # Filter by word length
+        tokens = [
+            t for t in tokens
+            if len(t) >= self.min_word_length
+            and (self.max_word_length is None or len(t) <= self.max_word_length)
+        ]
+        
+        # Join tokens back into string
+        return ' '.join(tokens)
+    
+    def clean_batch(self, texts: List[str]) -> List[str]:
+        """
+        Clean a batch of text strings.
+        
+        Args:
+            texts: List of raw texts to preprocess
+            
+        Returns:
+            List of cleaned texts
+            
+        Example:
+            >>> preprocessor = TextPreprocessor()
+            >>> texts = ["Hello world!", "Test email@example.com"]
+            >>> preprocessor.clean_batch(texts)
+            ['hello world', 'test']
+        """
+        return [self.clean_text(text) for text in texts]
+    
+    def get_config(self) -> dict:
+        """
+        Get preprocessor configuration as dictionary.
+        
+        Returns:
+            Configuration dictionary
+        """
+        return {
+            'lowercase': self.lowercase,
+            'remove_punctuation': self.remove_punctuation,
+            'remove_numbers': self.remove_numbers,
+            'remove_urls': self.remove_urls,
+            'remove_emails': self.remove_emails,
+            'remove_stopwords': self.remove_stopwords,
+            'apply_lemmatization': self.apply_lemmatization,
+            'min_word_length': self.min_word_length,
+            'max_word_length': self.max_word_length
+        }
+    
+    def __repr__(self) -> str:
+        """String representation of preprocessor configuration."""
+        config = self.get_config()
+        config_str = ', '.join(f"{k}={v}" for k, v in config.items())
+        return f"TextPreprocessor({config_str})"
+
+================================================================================
+SECTION 5: FEATURE EXTRACTION MODULE
+================================================================================
+
+5.1 CREATE feature_pipeline/feature_extractor.py
+-------------------------------------------------
+This module converts preprocessed text to numerical features.
+
+"""
+Feature extraction for email categorization using TF-IDF vectorization.
+
+This module provides the EmailFeatureExtractor class which:
+- Uses TF-IDF (Term Frequency-Inverse Document Frequency) vectorization
+- Integrates with TextPreprocessor for consistent preprocessing
+- Supports configurable vocabulary size and n-gram ranges
+- Provides save/load functionality for trained vectorizers
+
+CRITICAL: The same vectorizer (fitted on training data) must be used
+for both training and inference to ensure feature alignment.
+"""
+
+import os
+import joblib
+import numpy as np
+from typing import List, Optional, Tuple
+from sklearn.feature_extraction.text import TfidfVectorizer
+from .preprocessing import TextPreprocessor
+
+class EmailFeatureExtractor:
+    """
+    TF-IDF feature extraction for email text.
+    
+    This class combines text preprocessing with TF-IDF vectorization to
+    convert raw email text into numerical feature vectors suitable for
+    machine learning models.
+    
+    Example:
+        >>> # Training phase
+        >>> extractor = EmailFeatureExtractor(max_features=5000)
+        >>> train_texts = ["urgent meeting tomorrow", "project update needed"]
+        >>> train_features = extractor.fit_transform(train_texts)
+        >>> extractor.save("artifacts/vectorizers/email_vectorizer_v1.pkl")
+        
+        >>> # Inference phase
+        >>> extractor = EmailFeatureExtractor.load(
+        ...     "artifacts/vectorizers/email_vectorizer_v1.pkl"
+        ... )
+        >>> new_text = ["meeting scheduled for monday"]
+        >>> new_features = extractor.transform(new_text)
+    """
+    
+    def __init__(
+        self,
+        max_features: int = 5000,
+        ngram_range: Tuple[int, int] = (1, 2),
+        min_df: int = 2,
+        max_df: float = 0.95,
+        preprocessor_config: Optional[dict] = None
+    ):
+        """
+        Initialize feature extractor.
+        
+        Args:
+            max_features: Maximum number of features (vocabulary size)
+            ngram_range: Range of n-grams (e.g., (1,2) = unigrams + bigrams)
+            min_df: Minimum document frequency (ignore rare terms)
+            max_df: Maximum document frequency (ignore very common terms)
+            preprocessor_config: Configuration dict for TextPreprocessor
+        """
+        self.max_features = max_features
+        self.ngram_range = ngram_range
+        self.min_df = min_df
+        self.max_df = max_df
+        
+        # Initialize preprocessor
+        if preprocessor_config is None:
+            preprocessor_config = {
+                'lowercase': True,
+                'remove_punctuation': True,
+                'remove_numbers': False,
+                'remove_urls': True,
+                'remove_emails': True,
+                'remove_stopwords': True,
+                'apply_lemmatization': True,
+                'min_word_length': 2
+            }
+        
+        self.preprocessor = TextPreprocessor(**preprocessor_config)
+        
+        # Initialize TF-IDF vectorizer
+        self.vectorizer = TfidfVectorizer(
+            max_features=self.max_features,
+            ngram_range=self.ngram_range,
+            min_df=self.min_df,
+            max_df=self.max_df,
+            strip_accents='unicode',
+            lowercase=False,  # Already handled by preprocessor
+            tokenizer=lambda x: x.split(),  # Already tokenized by preprocessor
+            token_pattern=None  # Use custom tokenizer
+        )
+        
+        self._is_fitted = False
+    
+    def fit(self, texts: List[str]) -> 'EmailFeatureExtractor':
+        """
+        Fit the vectorizer on training texts.
+        
+        This learns the vocabulary and IDF weights from the training data.
+        Must be called before transform() during training phase.
+        
+        Args:
+            texts: List of raw email texts
+            
+        Returns:
+            self (fitted extractor)
+            
+        Example:
+            >>> extractor = EmailFeatureExtractor()
+            >>> train_texts = ["meeting tomorrow", "project update"]
+            >>> extractor.fit(train_texts)
+        """
+        # Preprocess texts
+        cleaned_texts = self.preprocessor.clean_batch(texts)
+        
+        # Fit vectorizer
+        self.vectorizer.fit(cleaned_texts)
+        self._is_fitted = True
+        
+        return self
+    
+    def transform(self, texts: List[str]) -> np.ndarray:
+        """
+        Transform texts to feature vectors.
+        
+        Uses the fitted vectorizer to convert texts to TF-IDF features.
+        Must call fit() first during training, or load a fitted vectorizer.
+        
+        Args:
+            texts: List of raw email texts
+            
+        Returns:
+            Feature matrix (n_samples, n_features)
+            
+        Raises:
+            ValueError: If vectorizer not fitted
+            
+        Example:
+            >>> extractor.fit(train_texts)  # Must fit first
+            >>> features = extractor.transform(test_texts)
+            >>> features.shape
+            (100, 5000)
+        """
+        if not self._is_fitted:
+            raise ValueError(
+                "Vectorizer not fitted. Call fit() first or load a fitted vectorizer."
+            )
+        
+        # Preprocess texts
+        cleaned_texts = self.preprocessor.clean_batch(texts)
+        
+        # Transform to features
+        features = self.vectorizer.transform(cleaned_texts)
+        
+        return features.toarray()
+    
+    def fit_transform(self, texts: List[str]) -> np.ndarray:
+        """
+        Fit vectorizer and transform texts in one step.
+        
+        Convenience method combining fit() and transform().
+        Use this during training phase.
+        
+        Args:
+            texts: List of raw email texts
+            
+        Returns:
+            Feature matrix (n_samples, n_features)
+            
+        Example:
+            >>> extractor = EmailFeatureExtractor()
+            >>> train_features = extractor.fit_transform(train_texts)
+        """
+        return self.fit(texts).transform(texts)
+    
+    def get_feature_names(self) -> List[str]:
+        """
+        Get feature names (vocabulary terms).
+        
+        Returns:
+            List of feature names
+            
+        Raises:
+            ValueError: If vectorizer not fitted
+            
+        Example:
+            >>> extractor.fit(train_texts)
+            >>> features = extractor.get_feature_names()
+            >>> features[:5]
+            ['meeting', 'project', 'update', 'urgent', 'tomorrow']
+        """
+        if not self._is_fitted:
+            raise ValueError("Vectorizer not fitted. Call fit() first.")
+        
+        return self.vectorizer.get_feature_names_out().tolist()
+    
+    def get_vocabulary_size(self) -> int:
+        """
+        Get actual vocabulary size (may be less than max_features).
+        
+        Returns:
+            Number of features in vocabulary
+            
+        Raises:
+            ValueError: If vectorizer not fitted
+        """
+        if not self._is_fitted:
+            raise ValueError("Vectorizer not fitted. Call fit() first.")
+        
+        return len(self.vectorizer.vocabulary_)
+    
+    def save(self, filepath: str) -> None:
+        """
+        Save fitted extractor to disk.
+        
+        Saves both the vectorizer and preprocessor configuration.
+        Creates directory if it doesn't exist.
+        
+        Args:
+            filepath: Path to save the extractor (.pkl extension)
+            
+        Raises:
+            ValueError: If vectorizer not fitted
+            
+        Example:
+            >>> extractor.save("artifacts/vectorizers/email_vectorizer_v1.pkl")
+        """
+        if not self._is_fitted:
+            raise ValueError("Cannot save unfitted vectorizer. Call fit() first.")
+        
+        # Create directory if needed
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        # Save entire extractor
+        joblib.dump(self, filepath)
+        print(f"Saved EmailFeatureExtractor to {filepath}")
+    
+    @classmethod
+    def load(cls, filepath: str) -> 'EmailFeatureExtractor':
+        """
+        Load fitted extractor from disk.
+        
+        Args:
+            filepath: Path to saved extractor file
+            
+        Returns:
+            Loaded EmailFeatureExtractor
+            
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            
+        Example:
+            >>> extractor = EmailFeatureExtractor.load(
+            ...     "artifacts/vectorizers/email_vectorizer_v1.pkl"
+            ... )
+            >>> features = extractor.transform(new_texts)
+        """
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"Extractor file not found: {filepath}")
+        
+        extractor = joblib.load(filepath)
+        print(f"Loaded EmailFeatureExtractor from {filepath}")
+        return extractor
+    
+    def get_config(self) -> dict:
+        """
+        Get extractor configuration.
+        
+        Returns:
+            Configuration dictionary
+        """
+        return {
+            'max_features': self.max_features,
+            'ngram_range': self.ngram_range,
+            'min_df': self.min_df,
+            'max_df': self.max_df,
+            'preprocessor_config': self.preprocessor.get_config(),
+            'vocabulary_size': self.get_vocabulary_size() if self._is_fitted else None,
+            'is_fitted': self._is_fitted
+        }
+    
+    def __repr__(self) -> str:
+        """String representation of extractor."""
+        status = "fitted" if self._is_fitted else "not fitted"
+        return (
+            f"EmailFeatureExtractor(max_features={self.max_features}, "
+            f"ngram_range={self.ngram_range}, {status})"
+        )
+
+================================================================================
+SECTION 6: PIPELINE CONFIGURATION
+================================================================================
+
+6.1 CREATE feature_pipeline/pipeline_config.py
+-----------------------------------------------
+This module manages configuration versioning for reproducibility.
+
+"""
+Pipeline configuration management for email categorization.
+
+This module provides dataclasses for managing preprocessing and feature
+extraction configurations. Configurations can be serialized to JSON for
+versioning and reproducibility.
+
+CRITICAL: Save configuration with each trained model to ensure
+identical preprocessing during inference.
+"""
+
+import json
+from dataclasses import dataclass, asdict, field
+from typing import Optional, Tuple, Dict, Any
+from datetime import datetime
+
+@dataclass
+class PreprocessingConfig:
+    """
+    Configuration for text preprocessing.
+    
+    Attributes:
+        lowercase: Convert text to lowercase
+        remove_punctuation: Remove punctuation characters
+        remove_numbers: Remove numeric digits
+        remove_urls: Remove HTTP/HTTPS URLs
+        remove_emails: Remove email addresses
+        remove_stopwords: Remove common stopwords
+        apply_lemmatization: Apply word lemmatization
+        min_word_length: Minimum word length to keep
+        max_word_length: Maximum word length (None = no limit)
+    """
+    lowercase: bool = True
+    remove_punctuation: bool = True
+    remove_numbers: bool = False
+    remove_urls: bool = True
+    remove_emails: bool = True
+    remove_stopwords: bool = True
+    apply_lemmatization: bool = True
+    min_word_length: int = 2
+    max_word_length: Optional[int] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> 'PreprocessingConfig':
+        """Create from dictionary."""
+        return cls(**config_dict)
+
+@dataclass
+class FeatureExtractionConfig:
+    """
+    Configuration for TF-IDF feature extraction.
+    
+    Attributes:
+        max_features: Maximum vocabulary size
+        ngram_range: N-gram range (min, max)
+        min_df: Minimum document frequency
+        max_df: Maximum document frequency
+    """
+    max_features: int = 5000
+    ngram_range: Tuple[int, int] = (1, 2)
+    min_df: int = 2
+    max_df: float = 0.95
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> 'FeatureExtractionConfig':
+        """Create from dictionary."""
+        # Convert ngram_range from list to tuple if needed
+        if 'ngram_range' in config_dict and isinstance(config_dict['ngram_range'], list):
+            config_dict['ngram_range'] = tuple(config_dict['ngram_range'])
+        return cls(**config_dict)
+
+@dataclass
+class PipelineConfig:
+    """
+    Complete pipeline configuration including preprocessing and feature extraction.
+    
+    This class combines all configuration settings and provides methods for
+    saving/loading configurations as JSON files.
+    
+    Attributes:
+        version: Configuration version identifier
+        created_at: Timestamp of creation
+        preprocessing: Preprocessing configuration
+        feature_extraction: Feature extraction configuration
+        description: Optional description of this configuration
+    """
+    version: str = "1.0"
+    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
+    feature_extraction: FeatureExtractionConfig = field(default_factory=FeatureExtractionConfig)
+    description: str = "Default pipeline configuration"
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert entire configuration to dictionary."""
+        return {
+            'version': self.version,
+            'created_at': self.created_at,
+            'preprocessing': self.preprocessing.to_dict(),
+            'feature_extraction': self.feature_extraction.to_dict(),
+            'description': self.description
+        }
+    
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> 'PipelineConfig':
+        """Create from dictionary."""
+        preprocessing = PreprocessingConfig.from_dict(config_dict['preprocessing'])
+        feature_extraction = FeatureExtractionConfig.from_dict(config_dict['feature_extraction'])
+        
+        return cls(
+            version=config_dict.get('version', '1.0'),
+            created_at=config_dict.get('created_at', datetime.now().isoformat()),
+            preprocessing=preprocessing,
+            feature_extraction=feature_extraction,
+            description=config_dict.get('description', '')
+        )
+    
+    def save(self, filepath: str) -> None:
+        """
+        Save configuration to JSON file.
+        
+        Args:
+            filepath: Path to save configuration (.json extension)
+            
+        Example:
+            >>> config = PipelineConfig()
+            >>> config.save("artifacts/configs/pipeline_config_v1.json")
+        """
+        import os
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        with open(filepath, 'w') as f:
+            json.dump(self.to_dict(), f, indent=2)
+        
+        print(f"Saved pipeline configuration to {filepath}")
+    
+    @classmethod
+    def load(cls, filepath: str) -> 'PipelineConfig':
+        """
+        Load configuration from JSON file.
+        
+        Args:
+            filepath: Path to configuration file
+            
+        Returns:
+            Loaded PipelineConfig
+            
+        Example:
+            >>> config = PipelineConfig.load(
+            ...     "artifacts/configs/pipeline_config_v1.json"
+            ... )
+        """
+        with open(filepath, 'r') as f:
+            config_dict = json.load(f)
+        
+        config = cls.from_dict(config_dict)
+        print(f"Loaded pipeline configuration from {filepath}")
+        return config
+    
+    def __repr__(self) -> str:
+        """String representation."""
+        return (
+            f"PipelineConfig(version={self.version}, "
+            f"max_features={self.feature_extraction.max_features})"
+        )
+
+# Predefined configurations for common use cases
+
+def get_default_config() -> PipelineConfig:
+    """
+    Get default pipeline configuration.
+    
+    Returns:
+        Default PipelineConfig with standard settings
+    """
+    return PipelineConfig(
+        version="1.0",
+        description="Default configuration with standard preprocessing and 5000 features"
+    )
+
+def get_aggressive_config() -> PipelineConfig:
+    """
+    Get aggressive preprocessing configuration.
+    
+    More aggressive cleaning: removes numbers, more stopwords, stricter length filters.
+    
+    Returns:
+        PipelineConfig with aggressive preprocessing
+    """
+    preprocessing = PreprocessingConfig(
+        lowercase=True,
+        remove_punctuation=True,
+        remove_numbers=True,  # Remove numbers
+        remove_urls=True,
+        remove_emails=True,
+        remove_stopwords=True,
+        apply_lemmatization=True,
+        min_word_length=3,  # Longer minimum
+        max_word_length=15   # Set maximum length
+    )
+    
+    feature_extraction = FeatureExtractionConfig(
+        max_features=3000,  # Smaller vocabulary
+        ngram_range=(1, 2),
+        min_df=3,           # Higher minimum frequency
+        max_df=0.90         # Lower maximum frequency
+    )
+    
+    return PipelineConfig(
+        version="1.0-aggressive",
+        preprocessing=preprocessing,
+        feature_extraction=feature_extraction,
+        description="Aggressive preprocessing with stricter filtering"
+    )
+
+def get_minimal_config() -> PipelineConfig:
+    """
+    Get minimal preprocessing configuration.
+    
+    Lighter preprocessing: keeps numbers, no lemmatization, larger vocabulary.
+    
+    Returns:
+        PipelineConfig with minimal preprocessing
+    """
+    preprocessing = PreprocessingConfig(
+        lowercase=True,
+        remove_punctuation=True,
+        remove_numbers=False,  # Keep numbers
+        remove_urls=True,
+        remove_emails=True,
+        remove_stopwords=False,  # Keep stopwords
+        apply_lemmatization=False,  # No lemmatization
+        min_word_length=1,
+        max_word_length=None
+    )
+    
+    feature_extraction = FeatureExtractionConfig(
+        max_features=10000,  # Larger vocabulary
+        ngram_range=(1, 3),  # Include trigrams
+        min_df=1,
+        max_df=1.0
+    )
+    
+    return PipelineConfig(
+        version="1.0-minimal",
+        preprocessing=preprocessing,
+        feature_extraction=feature_extraction,
+        description="Minimal preprocessing with larger vocabulary"
+    )
+
+================================================================================
+SECTION 7: ARTIFACT MANAGEMENT
+================================================================================
+
+7.1 CREATE feature_pipeline/artifact_manager.py
+------------------------------------------------
+This module organizes saved models, vectorizers, and configurations.
+
+"""
+Artifact management for models, vectorizers, and configurations.
+
+This module provides utilities for organizing and managing ML artifacts
+including trained models, fitted vectorizers, and pipeline configurations.
+
+Artifact organization:
+artifacts/
+├── models/               # Trained classification models
+│   └── model_v1.0.pkl
+├── vectorizers/          # Fitted TF-IDF vectorizers
+│   └── vectorizer_v1.0.pkl
+└── configs/              # Pipeline configurations
+    └── config_v1.0.json
+"""
+
+import os
+import re
+from typing import Optional, List, Tuple
+from datetime import datetime
+
+class ArtifactManager:
+    """
+    Manager for ML artifacts (models, vectorizers, configs).
+    
+    Provides methods for:
+    - Generating versioned artifact paths
+    - Listing available artifacts
+    - Finding latest versions
+    - Cleaning up old artifacts
+    
+    Example:
+        >>> manager = ArtifactManager()
+        >>> model_path = manager.get_model_path("1.0")
+        >>> manager.save_model(model, model_path)
+        >>> latest = manager.get_latest_model()
+    """
+    
+    def __init__(self, base_dir: str = "artifacts"):
+        """
+        Initialize artifact manager.
+        
+        Args:
+            base_dir: Base directory for artifacts
+        """
+        self.base_dir = base_dir
+        self.models_dir = os.path.join(base_dir, "models")
+        self.vectorizers_dir = os.path.join(base_dir, "vectorizers")
+        self.configs_dir = os.path.join(base_dir, "configs")
+        
+        # Create directories if they don't exist
+        for dir_path in [self.models_dir, self.vectorizers_dir, self.configs_dir]:
+            os.makedirs(dir_path, exist_ok=True)
+    
+    def get_model_path(self, version: str, create_dir: bool = True) -> str:
+        """
+        Get path for model artifact.
+        
+        Args:
+            version: Model version identifier
+            create_dir: Create directory if it doesn't exist
+            
+        Returns:
+            Full path to model file
+            
+        Example:
+            >>> manager.get_model_path("1.0")
+            'artifacts/models/model_v1.0.pkl'
+        """
+        if create_dir:
+            os.makedirs(self.models_dir, exist_ok=True)
+        return os.path.join(self.models_dir, f"model_v{version}.pkl")
+    
+    def get_vectorizer_path(self, version: str, create_dir: bool = True) -> str:
+        """
+        Get path for vectorizer artifact.
+        
+        Args:
+            version: Vectorizer version identifier
+            create_dir: Create directory if it doesn't exist
+            
+        Returns:
+            Full path to vectorizer file
+            
+        Example:
+            >>> manager.get_vectorizer_path("1.0")
+            'artifacts/vectorizers/vectorizer_v1.0.pkl'
+        """
+        if create_dir:
+            os.makedirs(self.vectorizers_dir, exist_ok=True)
+        return os.path.join(self.vectorizers_dir, f"vectorizer_v{version}.pkl")
+    
+    def get_config_path(self, version: str, create_dir: bool = True) -> str:
+        """
+        Get path for configuration artifact.
+        
+        Args:
+            version: Configuration version identifier
+            create_dir: Create directory if it doesn't exist
+            
+        Returns:
+            Full path to config file
+            
+        Example:
+            >>> manager.get_config_path("1.0")
+            'artifacts/configs/config_v1.0.json'
+        """
+        if create_dir:
+            os.makedirs(self.configs_dir, exist_ok=True)
+        return os.path.join(self.configs_dir, f"config_v{version}.json")
+    
+    def list_models(self) -> List[Tuple[str, str]]:
+        """
+        List all available model artifacts.
+        
+        Returns:
+            List of (version, filepath) tuples
+            
+        Example:
+            >>> manager.list_models()
+            [('1.0', 'artifacts/models/model_v1.0.pkl'),
+             ('1.1', 'artifacts/models/model_v1.1.pkl')]
+        """
+        return self._list_artifacts(self.models_dir, "model_v", ".pkl")
+    
+    def list_vectorizers(self) -> List[Tuple[str, str]]:
+        """
+        List all available vectorizer artifacts.
+        
+        Returns:
+            List of (version, filepath) tuples
+        """
+        return self._list_artifacts(self.vectorizers_dir, "vectorizer_v", ".pkl")
+    
+    def list_configs(self) -> List[Tuple[str, str]]:
+        """
+        List all available configuration artifacts.
+        
+        Returns:
+            List of (version, filepath) tuples
+        """
+        return self._list_artifacts(self.configs_dir, "config_v", ".json")
+    
+    def _list_artifacts(
+        self, 
+        directory: str, 
+        prefix: str, 
+        extension: str
+    ) -> List[Tuple[str, str]]:
+        """
+        List artifacts in a directory matching pattern.
+        
+        Args:
+            directory: Directory to search
+            prefix: Filename prefix (e.g., "model_v")
+            extension: File extension (e.g., ".pkl")
+            
+        Returns:
+            List of (version, filepath) tuples sorted by version
+        """
+        if not os.path.exists(directory):
+            return []
+        
+        pattern = re.compile(f"^{prefix}(.+){re.escape(extension)}$")
+        artifacts = []
+        
+        for filename in os.listdir(directory):
+            match = pattern.match(filename)
+            if match:
+                version = match.group(1)
+                filepath = os.path.join(directory, filename)
+                artifacts.append((version, filepath))
+        
+        # Sort by version (simple string sort works for semantic versioning)
+        artifacts.sort(key=lambda x: x[0])
+        return artifacts
+    
+    def get_latest_model(self) -> Optional[str]:
+        """
+        Get path to the latest model version.
+        
+        Returns:
+            Path to latest model, or None if no models exist
+            
+        Example:
+            >>> manager.get_latest_model()
+            'artifacts/models/model_v1.2.pkl'
+        """
+        models = self.list_models()
+        return models[-1][1] if models else None
+    
+    def get_latest_vectorizer(self) -> Optional[str]:
+        """
+        Get path to the latest vectorizer version.
+        
+        Returns:
+            Path to latest vectorizer, or None if no vectorizers exist
+        """
+        vectorizers = self.list_vectorizers()
+        return vectorizers[-1][1] if vectorizers else None
+    
+    def get_latest_config(self) -> Optional[str]:
+        """
+        Get path to the latest configuration version.
+        
+        Returns:
+            Path to latest config, or None if no configs exist
+        """
+        configs = self.list_configs()
+        return configs[-1][1] if configs else None
+    
+    def generate_version(self, prefix: str = "") -> str:
+        """
+        Generate new version identifier based on timestamp.
+        
+        Args:
+            prefix: Optional prefix for version (e.g., "prod")
+            
+        Returns:
+            Version string in format: prefix_YYYYMMDD_HHMMSS
+            
+        Example:
+            >>> manager.generate_version("prod")
+            'prod_20260302_143022'
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if prefix:
+            return f"{prefix}_{timestamp}"
+        return timestamp
+    
+    def delete_artifact(self, filepath: str) -> bool:
+        """
+        Delete an artifact file.
+        
+        Args:
+            filepath: Path to artifact file
+            
+        Returns:
+            True if deleted successfully, False otherwise
+            
+        Example:
+            >>> manager.delete_artifact("artifacts/models/model_v1.0.pkl")
+            True
+        """
+        try:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                print(f"Deleted artifact: {filepath}")
+                return True
+            else:
+                print(f"Artifact not found: {filepath}")
+                return False
+        except Exception as e:
+            print(f"Error deleting artifact {filepath}: {e}")
+            return False
+    
+    def cleanup_old_versions(
+        self, 
+        artifact_type: str = "all", 
+        keep_latest: int = 3
+    ) -> int:
+        """
+        Delete old artifact versions, keeping only the latest N versions.
+        
+        Args:
+            artifact_type: Type of artifacts to clean ("models", "vectorizers", 
+                          "configs", or "all")
+            keep_latest: Number of latest versions to keep
+            
+        Returns:
+            Number of artifacts deleted
+            
+        Example:
+            >>> # Keep only latest 3 models
+            >>> manager.cleanup_old_versions("models", keep_latest=3)
+            2
+        """
+        deleted_count = 0
+        
+        artifact_types = {
+            'models': self.list_models,
+            'vectorizers': self.list_vectorizers,
+            'configs': self.list_configs
+        }
+        
+        if artifact_type == "all":
+            types_to_clean = artifact_types.keys()
+        else:
+            types_to_clean = [artifact_type]
+        
+        for atype in types_to_clean:
+            if atype not in artifact_types:
+                continue
+            
+            artifacts = artifact_types[atype]()
+            
+            # Keep only latest N versions
+            if len(artifacts) > keep_latest:
+                to_delete = artifacts[:-keep_latest]
+                for version, filepath in to_delete:
+                    if self.delete_artifact(filepath):
+                        deleted_count += 1
+        
+        print(f"Cleaned up {deleted_count} old artifact(s)")
+        return deleted_count
+    
+    def get_artifact_info(self) -> dict:
+        """
+        Get summary information about all artifacts.
+        
+        Returns:
+            Dictionary with artifact counts and latest versions
+            
+        Example:
+            >>> manager.get_artifact_info()
+            {
+                'models': {'count': 3, 'latest': '1.2'},
+                'vectorizers': {'count': 3, 'latest': '1.2'},
+                'configs': {'count': 3, 'latest': '1.2'}
+            }
+        """
+        models = self.list_models()
+        vectorizers = self.list_vectorizers()
+        configs = self.list_configs()
+        
+        return {
+            'models': {
+                'count': len(models),
+                'latest': models[-1][0] if models else None
+            },
+            'vectorizers': {
+                'count': len(vectorizers),
+                'latest': vectorizers[-1][0] if vectorizers else None
+            },
+            'configs': {
+                'count': len(configs),
+                'latest': configs[-1][0] if configs else None
+            }
+        }
+
+================================================================================
+SECTION 8: PACKAGE INITIALIZATION
+================================================================================
+
+8.1 CREATE feature_pipeline/__init__.py
+----------------------------------------
+This makes feature_pipeline a Python package and exposes key classes.
+
+"""
+Feature Pipeline Package
+
+This package provides text preprocessing and feature extraction for
+email categorization.
+
+Main components:
+- TextPreprocessor: Text cleaning and normalization
+- EmailFeatureExtractor: TF-IDF vectorization
+- PipelineConfig: Configuration management
+- ArtifactManager: Artifact organization
+
+Example usage:
+    >>> from feature_pipeline import EmailFeatureExtractor, PipelineConfig
+    >>> 
+    >>> # Create configuration
+    >>> config = PipelineConfig()
+    >>> config.save("artifacts/configs/config_v1.0.json")
+    >>> 
+    >>> # Train feature extractor
+    >>> extractor = EmailFeatureExtractor(
+    ...     max_features=config.feature_extraction.max_features
+    ... )
+    >>> features = extractor.fit_transform(train_texts)
+    >>> extractor.save("artifacts/vectorizers/vectorizer_v1.0.pkl")
+    >>> 
+    >>> # Load for inference
+    >>> extractor = EmailFeatureExtractor.load(
+    ...     "artifacts/vectorizers/vectorizer_v1.0.pkl"
+    ... )
+    >>> new_features = extractor.transform(new_texts)
+"""
+
+from .preprocessing import TextPreprocessor
+from .feature_extractor import EmailFeatureExtractor
+from .pipeline_config import (
+    PreprocessingConfig,
+    FeatureExtractionConfig,
+    PipelineConfig,
+    get_default_config,
+    get_aggressive_config,
+    get_minimal_config
+)
+from .artifact_manager import ArtifactManager
+
+__version__ = "1.0.0"
+
+__all__ = [
+    'TextPreprocessor',
+    'EmailFeatureExtractor',
+    'PreprocessingConfig',
+    'FeatureExtractionConfig',
+    'PipelineConfig',
+    'get_default_config',
+    'get_aggressive_config',
+    'get_minimal_config',
+    'ArtifactManager'
+]
+
+8.2 CREATE tests/__init__.py
+-----------------------------
+Create empty file: tests/__init__.py
+
+(This file is intentionally empty - it just makes tests/ a Python package)
+
+================================================================================
+SECTION 9: TESTING SUITE
+================================================================================
+
+9.1 CREATE tests/test_preprocessing.py
+---------------------------------------
+Comprehensive test suite for the preprocessing pipeline.
+
+"""
+Test suite for preprocessing and feature extraction pipeline.
+
+This module tests:
+- Text preprocessing functionality
+- URL and email removal
+- Batch processing
+- Feature extraction
+- Preprocessing consistency
+- Save/load functionality
+- Configuration management
+- Edge cases
+
+Run with: python -m pytest tests/test_preprocessing.py -v
+Or: python tests/test_preprocessing.py
+"""
+
+import os
+import sys
+import unittest
+import tempfile
+import shutil
+import numpy as np
+
+# Add project root to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from feature_pipeline import (
+    TextPreprocessor,
+    EmailFeatureExtractor,
+    PipelineConfig,
+    ArtifactManager,
+    get_default_config
+)
+
+class TestTextPreprocessor(unittest.TestCase):
+    """Test TextPreprocessor functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.preprocessor = TextPreprocessor(
+            lowercase=True,
+            remove_punctuation=True,
+            remove_urls=True,
+            remove_emails=True,
+            remove_stopwords=True,
+            apply_lemmatization=True
+        )
+    
+    def test_basic_preprocessing(self):
+        """Test basic text cleaning."""
+        text = "Hello World! This is a TEST."
+        result = self.preprocessor.clean_text(text)
+        
+        # Should be lowercase, no punctuation
+        self.assertNotIn('!', result)
+        self.assertNotIn('.', result)
+        self.assertEqual(result.lower(), result)
+    
+    def test_url_removal(self):
+        """Test URL removal."""
+        text = "Check this link: https://example.com for more info"
+        result = self.preprocessor.clean_text(text)
+        
+        # URL should be removed
+        self.assertNotIn('https', result)
+        self.assertNotIn('example.com', result)
+    
+    def test_email_removal(self):
+        """Test email address removal."""
+        text = "Contact us at support@example.com for help"
+        result = self.preprocessor.clean_text(text)
+        
+        # Email should be removed
+        self.assertNotIn('support@example.com', result)
+        self.assertNotIn('@', result)
+    
+    def test_stopword_removal(self):
+        """Test stopword filtering."""
+        text = "this is a test of the system"
+        result = self.preprocessor.clean_text(text)
+        
+        # Common stopwords should be removed
+        self.assertNotIn('is', result)
+        self.assertNotIn('a', result)
+        self.assertNotIn('the', result)
+    
+    def test_batch_processing(self):
+        """Test batch text processing."""
+        texts = [
+            "First email about meetings",
+            "Second email about projects",
+            "Third email about reports"
+        ]
+        results = self.preprocessor.clean_batch(texts)
+        
+        self.assertEqual(len(results), 3)
+        for result in results:
+            self.assertIsInstance(result, str)
+            self.assertEqual(result.lower(), result)  # All lowercase
+    
+    def test_empty_text(self):
+        """Test handling of empty/None text."""
+        self.assertEqual(self.preprocessor.clean_text(""), "")
+        self.assertEqual(self.preprocessor.clean_text(None), "")
+    
+    def test_get_config(self):
+        """Test configuration retrieval."""
+        config = self.preprocessor.get_config()
+        
+        self.assertIsInstance(config, dict)
+        self.assertTrue(config['lowercase'])
+        self.assertTrue(config['remove_punctuation'])
+        self.assertTrue(config['remove_urls'])
+
+class TestEmailFeatureExtractor(unittest.TestCase):
+    """Test EmailFeatureExtractor functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.sample_texts = [
+            "urgent meeting scheduled for tomorrow morning",
+            "project update needed by end of week",
+            "please review the attached document",
+            "meeting reminder for team discussion",
+            "project status report required"
+        ]
+        self.temp_dir = tempfile.mkdtemp()
+    
+    def tearDown(self):
+        """Clean up temporary directory."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_fit_transform(self):
+        """Test fitting and transforming texts."""
+        extractor = EmailFeatureExtractor(max_features=100)
+        features = extractor.fit_transform(self.sample_texts)
+        
+        # Check shape
+        self.assertEqual(features.shape[0], len(self.sample_texts))
+        self.assertLessEqual(features.shape[1], 100)
+        
+        # Check values are numeric
+        self.assertTrue(np.all(np.isfinite(features)))
+    
+    def test_fit_then_transform(self):
+        """Test separate fit and transform calls."""
+        extractor = EmailFeatureExtractor(max_features=100)
+        
+        # Fit on training data
+        extractor.fit(self.sample_texts)
+        
+        # Transform new data
+        new_texts = ["urgent project meeting tomorrow"]
+        features = extractor.transform(new_texts)
+        
+        self.assertEqual(features.shape[0], 1)
+    
+    def test_transform_without_fit(self):
+        """Test that transform fails without fit."""
+        extractor = EmailFeatureExtractor()
+        
+        with self.assertRaises(ValueError):
+            extractor.transform(["test text"])
+    
+    def test_get_feature_names(self):
+        """Test feature name retrieval."""
+        extractor = EmailFeatureExtractor(max_features=50)
+        extractor.fit(self.sample_texts)
+        
+        feature_names = extractor.get_feature_names()
+        
+        self.assertIsInstance(feature_names, list)
+        self.assertGreater(len(feature_names), 0)
+        self.assertLessEqual(len(feature_names), 50)
+    
+    def test_vocabulary_size(self):
+        """Test vocabulary size retrieval."""
+        extractor = EmailFeatureExtractor(max_features=100)
+        extractor.fit(self.sample_texts)
+        
+        vocab_size = extractor.get_vocabulary_size()
+        
+        self.assertGreater(vocab_size, 0)
+        self.assertLessEqual(vocab_size, 100)
+    
+    def test_save_load(self):
+        """Test saving and loading extractor."""
+        # Train extractor
+        extractor = EmailFeatureExtractor(max_features=100)
+        features_before = extractor.fit_transform(self.sample_texts)
+        
+        # Save
+        save_path = os.path.join(self.temp_dir, "test_extractor.pkl")
+        extractor.save(save_path)
+        
+        # Load
+        loaded_extractor = EmailFeatureExtractor.load(save_path)
+        
+        # Transform with loaded extractor
+        features_after = loaded_extractor.transform(self.sample_texts)
+        
+        # Features should be identical
+        np.testing.assert_array_almost_equal(features_before, features_after)
+    
+    def test_preprocessing_consistency(self):
+        """Test that preprocessing is consistent across fit and transform."""
+        extractor = EmailFeatureExtractor(max_features=100)
+        
+        # Fit on lowercase text
+        train_texts = ["URGENT MEETING TOMORROW"]
+        extractor.fit(train_texts)
+        
+        # Transform with different case
+        test_texts = ["urgent meeting tomorrow"]
+        features = extractor.transform(test_texts)
+        
+        # Should produce valid features (preprocessing handles case)
+        self.assertEqual(features.shape[0], 1)
+        self.assertTrue(np.all(np.isfinite(features)))
+
+class TestPipelineConfig(unittest.TestCase):
+    """Test PipelineConfig functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+    
+    def tearDown(self):
+        """Clean up temporary directory."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_default_config(self):
+        """Test default configuration creation."""
+        config = get_default_config()
+        
+        self.assertEqual(config.version, "1.0")
+        self.assertIsInstance(config.preprocessing.to_dict(), dict)
+        self.assertIsInstance(config.feature_extraction.to_dict(), dict)
+    
+    def test_save_load_config(self):
+        """Test saving and loading configuration."""
+        config = get_default_config()
+        
+        # Save
+        config_path = os.path.join(self.temp_dir, "test_config.json")
+        config.save(config_path)
+        
+        # Load
+        loaded_config = PipelineConfig.load(config_path)
+        
+        # Should be identical
+        self.assertEqual(config.version, loaded_config.version)
+        self.assertEqual(
+            config.preprocessing.to_dict(), 
+            loaded_config.preprocessing.to_dict()
+        )
+        self.assertEqual(
+            config.feature_extraction.to_dict(),
+            loaded_config.feature_extraction.to_dict()
+        )
+    
+    def test_config_to_dict(self):
+        """Test configuration serialization."""
+        config = get_default_config()
+        config_dict = config.to_dict()
+        
+        self.assertIn('version', config_dict)
+        self.assertIn('preprocessing', config_dict)
+        self.assertIn('feature_extraction', config_dict)
+        self.assertIn('created_at', config_dict)
+
+class TestArtifactManager(unittest.TestCase):
+    """Test ArtifactManager functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.manager = ArtifactManager(base_dir=self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up temporary directory."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_directory_creation(self):
+        """Test automatic directory creation."""
+        self.assertTrue(os.path.exists(self.manager.models_dir))
+        self.assertTrue(os.path.exists(self.manager.vectorizers_dir))
+        self.assertTrue(os.path.exists(self.manager.configs_dir))
+    
+    def test_get_paths(self):
+        """Test path generation."""
+        model_path = self.manager.get_model_path("1.0")
+        vectorizer_path = self.manager.get_vectorizer_path("1.0")
+        config_path = self.manager.get_config_path("1.0")
+        
+        self.assertIn("model_v1.0.pkl", model_path)
+        self.assertIn("vectorizer_v1.0.pkl", vectorizer_path)
+        self.assertIn("config_v1.0.json", config_path)
+    
+    def test_list_artifacts(self):
+        """Test artifact listing."""
+        # Create some dummy files
+        open(self.manager.get_model_path("1.0"), 'w').close()
+        open(self.manager.get_model_path("1.1"), 'w').close()
+        
+        models = self.manager.list_models()
+        
+        self.assertEqual(len(models), 2)
+        self.assertEqual(models[0][0], "1.0")
+        self.assertEqual(models[1][0], "1.1")
+    
+    def test_get_latest(self):
+        """Test getting latest version."""
+        # Create dummy files
+        open(self.manager.get_model_path("1.0"), 'w').close()
+        open(self.manager.get_model_path("1.1"), 'w').close()
+        open(self.manager.get_model_path("1.2"), 'w').close()
+        
+        latest = self.manager.get_latest_model()
+        
+        self.assertIn("1.2", latest)
+    
+    def test_generate_version(self):
+        """Test version generation."""
+        version = self.manager.generate_version()
+        
+        self.assertIsInstance(version, str)
+        self.assertGreater(len(version), 0)
+        
+        # Test with prefix
+        version_with_prefix = self.manager.generate_version("prod")
+        self.assertTrue(version_with_prefix.startswith("prod_"))
+    
+    def test_cleanup_old_versions(self):
+        """Test cleaning up old versions."""
+        # Create multiple model versions
+        for i in range(5):
+            open(self.manager.get_model_path(f"1.{i}"), 'w').close()
+        
+        # Keep only latest 2
+        deleted = self.manager.cleanup_old_versions("models", keep_latest=2)
+        
+        self.assertEqual(deleted, 3)
+        
+        # Check only 2 remain
+        models = self.manager.list_models()
+        self.assertEqual(len(models), 2)
+    
+    def test_get_artifact_info(self):
+        """Test artifact information retrieval."""
+        # Create some artifacts
+        open(self.manager.get_model_path("1.0"), 'w').close()
+        open(self.manager.get_vectorizer_path("1.0"), 'w').close()
+        open(self.manager.get_config_path("1.0"), 'w').close()
+        
+        info = self.manager.get_artifact_info()
+        
+        self.assertEqual(info['models']['count'], 1)
+        self.assertEqual(info['vectorizers']['count'], 1)
+        self.assertEqual(info['configs']['count'], 1)
+        self.assertEqual(info['models']['latest'], "1.0")
+
+class TestIntegration(unittest.TestCase):
+    """Integration tests for complete pipeline."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.sample_texts = [
+            "urgent meeting scheduled for tomorrow morning at 10am",
+            "project update needed by end of this week",
+            "please review the attached quarterly report document",
+            "meeting reminder for team discussion on new features",
+            "project status report required for management review"
+        ]
+    
+    def tearDown(self):
+        """Clean up temporary directory."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_full_pipeline_workflow(self):
+        """Test complete training and inference workflow."""
+        # 1. Create configuration
+        config = get_default_config()
+        config_path = os.path.join(self.temp_dir, "config_v1.0.json")
+        config.save(config_path)
+        
+        # 2. Train feature extractor
+        extractor = EmailFeatureExtractor(
+            max_features=config.feature_extraction.max_features,
+            ngram_range=config.feature_extraction.ngram_range
+        )
+        train_features = extractor.fit_transform(self.sample_texts)
+        
+        # 3. Save extractor
+        extractor_path = os.path.join(self.temp_dir, "vectorizer_v1.0.pkl")
+        extractor.save(extractor_path)
+        
+        # 4. Load configuration and extractor
+        loaded_config = PipelineConfig.load(config_path)
+        loaded_extractor = EmailFeatureExtractor.load(extractor_path)
+        
+        # 5. Transform new data
+        new_texts = ["urgent project meeting tomorrow"]
+        inference_features = loaded_extractor.transform(new_texts)
+        
+        # Verify
+        self.assertEqual(train_features.shape[1], inference_features.shape[1])
+        self.assertTrue(np.all(np.isfinite(inference_features)))
+        self.assertEqual(loaded_config.version, config.version)
+    
+    def test_consistency_across_sessions(self):
+        """Test that features are consistent across save/load."""
+        # Train and save
+        extractor1 = EmailFeatureExtractor(max_features=100)
+        features1 = extractor1.fit_transform(self.sample_texts)
+        
+        extractor_path = os.path.join(self.temp_dir, "extractor.pkl")
+        extractor1.save(extractor_path)
+        
+        # Load and transform
+        extractor2 = EmailFeatureExtractor.load(extractor_path)
+        features2 = extractor2.transform(self.sample_texts)
+        
+        # Features should be identical
+        np.testing.assert_array_almost_equal(features1, features2, decimal=6)
+
+def run_tests():
+    """Run all tests."""
+    # Create test suite
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    
+    # Add all test classes
+    suite.addTests(loader.loadTestsFromTestCase(TestTextPreprocessor))
+    suite.addTests(loader.loadTestsFromTestCase(TestEmailFeatureExtractor))
+    suite.addTests(loader.loadTestsFromTestCase(TestPipelineConfig))
+    suite.addTests(loader.loadTestsFromTestCase(TestArtifactManager))
+    suite.addTests(loader.loadTestsFromTestCase(TestIntegration))
+    
+    # Run tests
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    
+    # Print summary
+    print("\n" + "=" * 70)
+    print("TEST SUMMARY")
+    print("=" * 70)
+    print(f"Tests run: {result.testsRun}")
+    print(f"Successes: {result.testsRun - len(result.failures) - len(result.errors)}")
+    print(f"Failures: {len(result.failures)}")
+    print(f"Errors: {len(result.errors)}")
+    print("=" * 70)
+    
+    return result.wasSuccessful()
+
+if __name__ == "__main__":
+    success = run_tests()
+    sys.exit(0 if success else 1)
+
+================================================================================
+SECTION 10: VERIFICATION CHECKLIST
+================================================================================
+
+After implementing Step 2, verify all components:
+
+10.1 FILE STRUCTURE CHECK
+--------------------------
+Verify all files exist:
+
+Get-ChildItem -Recurse -File | Select-Object FullName
+
+Expected files:
+✓ download_nltk_data.py
+✓ feature_pipeline/__init__.py
+✓ feature_pipeline/preprocessing.py
+✓ feature_pipeline/feature_extractor.py
+✓ feature_pipeline/pipeline_config.py
+✓ feature_pipeline/artifact_manager.py
+✓ tests/__init__.py
+✓ tests/test_preprocessing.py
+✓ artifacts/models/ (directory)
+✓ artifacts/vectorizers/ (directory)
+✓ artifacts/configs/ (directory)
+
+10.2 DEPENDENCY CHECK
+----------------------
+Verify all packages installed:
+
+pip list | Select-String "scikit-learn|numpy|nltk|joblib|regex"
+
+Expected output:
+joblib         1.3.2
+nltk           3.8.1
+numpy          1.26.2
+regex          2023.10.3
+scikit-learn   1.3.2
+
+10.3 NLTK DATA CHECK
+--------------------
+Verify NLTK data downloaded:
+
+python -c "import nltk; print(nltk.data.find('tokenizers/punkt')); print(nltk.data.find('corpora/stopwords'))"
+
+Should print paths without errors.
+
+10.4 IMPORT CHECK
+-----------------
+Verify all modules importable:
+
+python -c "from feature_pipeline import TextPreprocessor, EmailFeatureExtractor, PipelineConfig, ArtifactManager; print('All imports successful!')"
+
+Expected output:
+All imports successful!
+
+10.5 RUN TESTS
+--------------
+Execute full test suite:
+
+python tests/test_preprocessing.py
+
+Expected output:
+test_aggressive_config (tests.test_preprocessing.TestPipelineConfig) ... ok
+test_basic_preprocessing (tests.test_preprocessing.TestTextPreprocessor) ... ok
+test_batch_processing (tests.test_preprocessing.TestTextPreprocessor) ... ok
+... (more tests)
+----------------------------------------------------------------------
+Ran 24 tests in 3.456s
+
+OK
+
+All tests should PASS.
+
+10.6 QUICK FUNCTIONALITY TEST
+------------------------------
+Test basic functionality:
+
+python
+
+>>> from feature_pipeline import EmailFeatureExtractor, PipelineConfig
+>>> 
+>>> # Create configuration
+>>> config = PipelineConfig()
+>>> print(f"Config version: {config.version}")
+Config version: 1.0
+>>> 
+>>> # Create extractor
+>>> extractor = EmailFeatureExtractor(max_features=100)
+>>> 
+>>> # Sample data
+>>> texts = [
+...     "urgent meeting tomorrow",
+...     "project status update",
+...     "please review document"
+... ]
+>>> 
+>>> # Fit and transform
+>>> features = extractor.fit_transform(texts)
+>>> print(f"Feature shape: {features.shape}")
+Feature shape: (3, 100)
+>>> 
+>>> # Save
+>>> extractor.save("artifacts/vectorizers/test_v1.pkl")
+Saved EmailFeatureExtractor to artifacts/vectorizers/test_v1.pkl
+>>> 
+>>> # Load
+>>> loaded = EmailFeatureExtractor.load("artifacts/vectorizers/test_v1.pkl")
+Loaded EmailFeatureExtractor from artifacts/vectorizers/test_v1.pkl
+>>> 
+>>> # Transform new text
+>>> new_features = loaded.transform(["urgent project meeting"])
+>>> print(f"New feature shape: {new_features.shape}")
+New feature shape: (1, 100)
+
+Exit Python: exit()
+
+10.7 VERIFICATION SUMMARY
+-------------------------
+Complete this checklist:
+
+[ ] All files created in correct locations
+[ ] All dependencies installed (5 packages)
+[ ] NLTK data downloaded (4 packages)
+[ ] All modules import successfully
+[ ] Test suite passes (24 tests)
+[ ] Quick functionality test works
+[ ] Artifacts directory structure created
+[ ] Configuration save/load works
+[ ] Extractor save/load works
+[ ] Features generated successfully
+
+If ALL boxes checked: Step 2 is COMPLETE! ✓
+
+================================================================================
+SECTION 11: TROUBLESHOOTING GUIDE
+================================================================================
+
+11.1 IMPORT ERRORS
+------------------
+Problem: ModuleNotFoundError: No module named 'feature_pipeline'
+Solution: Ensure you're running from project root directory where feature_pipeline/ exists
+
+Problem: ImportError: cannot import name 'TextPreprocessor'
+Solution: Check feature_pipeline/__init__.py has correct imports
+
+11.2 NLTK DATA ERRORS
+---------------------
+Problem: LookupError: Resource 'tokenizers/punkt' not found
+Solution: Run download_nltk_data.py script:
+  python download_nltk_data.py
+
+Problem: Warning about stopwords not found
+Solution: NLTK data incomplete. Re-run download script with --force:
+  python -c "import nltk; nltk.download('stopwords', quiet=False)"
+
+11.3 SKLEARN ERRORS
+-------------------
+Problem: AttributeError: 'TfidfVectorizer' object has no attribute 'get_feature_names_out'
+Solution: Update scikit-learn to 1.0+:
+  pip install --upgrade scikit-learn==1.3.2
+
+Problem: ValueError: empty vocabulary
+Solution: Not enough unique words in training data. Reduce min_df or increase data:
+  extractor = EmailFeatureExtractor(min_df=1)
+
+11.4 TEST FAILURES
+------------------
+Problem: Tests fail with "Resource not found"
+Solution: Download NLTK data before running tests
+
+Problem: Tests fail with permission errors on Windows
+Solution: Run terminal as Administrator or use different temp directory
+
+Problem: Tests hang or timeout
+Solution: Reduce test data size or check for infinite loops in preprocessing
+
+11.5 SAVE/LOAD ERRORS
+---------------------
+Problem: FileNotFoundError when saving artifacts
+Solution: Ensure artifacts directory exists:
+  New-Item -ItemType Directory -Force -Path "artifacts\models"
+
+Problem: PermissionError when loading artifacts
+Solution: Close any programs that might have the file open, or use different path
+
+Problem: Loaded extractor produces different features
+Solution: Ensure scikit-learn version is same across save/load sessions
+
+11.6 PERFORMANCE ISSUES
+-----------------------
+Problem: Preprocessing very slow on large datasets
+Solution: Disable lemmatization or reduce features:
+  TextPreprocessor(apply_lemmatization=False)
+
+Problem: Memory error during vectorization
+Solution: Reduce max_features or process in batches:
+  EmailFeatureExtractor(max_features=1000)
+
+11.7 FEATURE MISMATCH ERRORS
+----------------------------
+Problem: ValueError: X has different number of features than during training
+Solution: This is CRITICAL error. Causes:
+  - Using different vectorizer for training vs inference
+  - Vectorizer not fitted before transform
+  - Using new vectorizer instead of loading trained one
+
+Fix: ALWAYS save and load the SAME vectorizer:
+  # Training
+  extractor.fit(train_texts)
+  extractor.save("vectorizer.pkl")
+  
+  # Inference
+  extractor = EmailFeatureExtractor.load("vectorizer.pkl")  # Use SAME vectorizer
+
+11.8 GETTING HELP
+-----------------
+If issues persist:
+1. Check Python version (should be 3.8+)
+2. Verify virtual environment is activated
+3. Check all dependencies installed correctly
+4. Review error messages carefully
+5. Check file paths are correct (absolute vs relative)
+6. Ensure working directory is project root
+
+================================================================================
+SECTION 12: NEXT STEPS (STEP 3 PREVIEW)
+================================================================================
+
+12.1 WHAT'S NEXT
+----------------
+After Step 2 completion, you'll move to Step 3: Training Service
+
+Step 3 will build:
+- Data loading and preparation utilities
+- Model training service with hyperparameter tuning
+- Model evaluation and metrics calculation
+- Model versioning and registration in database
+- Training pipeline orchestration
+
+12.2 PREREQUISITES FOR STEP 3
+------------------------------
+Before starting Step 3, you'll need:
+
+1. Labeled Training Data
+   - Email texts with category labels
+   - Minimum 100-200 samples per category
+   - CSV or database format
+   - Categories: e.g., "urgent", "normal", "spam"
+
+2. Step 1 & 2 Complete
+   - Neon database with schema deployed
+   - Feature pipeline tested and working
+   - All tests passing
+
+3. Additional Dependencies
+   - Will add: pandas, imbalanced-learn
+   - Already have: scikit-learn, numpy
+
+12.3 WHAT STEP 3 WILL COVER
+---------------------------
+1. Data Preparation
+   - Loading email datasets
+   - Train/validation/test splits
+   - Class imbalance handling
+   - Data validation
+
+2. Model Training
+   - Multiple classifier algorithms (Logistic Regression, Random Forest, SVM)
+   - Hyperparameter tuning with GridSearchCV
+   - Cross-validation
+   - Feature importance analysis
+
+3. Model Evaluation
+   - Accuracy, precision, recall, F1-score
+   - Confusion matrix
+   - Classification reports
+   - Model comparison
+
+4. Model Registry
+   - Save trained models
+   - Register in database (model_versions table)
+   - Link with pipeline configurations
+   - Version tracking
+
+5. Training Service
+   - Automated training pipeline
+   - Retraining on new data
+   - A/B testing preparation
+   - Model promotion workflow
+
+12.4 EXAMPLE WORKFLOW (STEP 3 PREVIEW)
+--------------------------------------
+Here's what you'll be able to do after Step 3:
+
+# Step 3 workflow (preview)
+from training_service import EmailClassifierTrainer
+from feature_pipeline import EmailFeatureExtractor, PipelineConfig
+from database.repository import ModelVersionRepository
+
+# 1. Load training data (you'll provide this)
+train_data = load_email_dataset("training_data.csv")
+
+# 2. Create pipeline configuration
+config = PipelineConfig()
+config.save("artifacts/configs/config_v1.0.json")
+
+# 3. Train model
+trainer = EmailClassifierTrainer(config=config)
+model, metrics = trainer.train(
+    texts=train_data['text'],
+    labels=train_data['category'],
+    model_type='logistic_regression'
+)
+
+# 4. Evaluate
+print(f"Accuracy: {metrics['accuracy']:.3f}")
+print(f"F1 Score: {metrics['f1_score']:.3f}")
+
+# 5. Save and register
+trainer.save_model("artifacts/models/model_v1.0.pkl")
+trainer.register_in_database(
+    version="1.0",
+    description="Initial production model"
+)
+
+12.5 DATA PREPARATION GUIDANCE
+-------------------------------
+Start preparing training data now:
+
+Format (CSV):
+email_id,text,category,priority
+1,"urgent meeting tomorrow morning","meeting","high"
+2,"project update needed","update","medium"
+3,"spam advertisement","spam","low"
+
+Requirements:
+- At least 500-1000 emails total
+- Balanced across categories (or handle imbalance)
+- Real email content (or realistic synthetic data)
+- Clean labels (consistent naming)
+
+Where to get data:
+- Your own email archive (export and label)
+- Public datasets (Enron, SpamAssassin)
+- Synthetic generation (for testing)
+- Crowd-sourced labeling
+
+12.6 WHEN TO START STEP 3
+--------------------------
+You're ready for Step 3 when:
+✓ All Step 2 tests passing
+✓ Feature extraction working correctly
+✓ Artifacts saving/loading successfully
+✓ Training data prepared (or plan for obtaining it)
+✓ Database connection working (Step 1)
+
+12.7 ESTIMATED TIMELINE
+-----------------------
+Step 3 Implementation: 4-6 hours
+- Data preparation: 1-2 hours
+- Training service code: 2-3 hours
+- Testing and validation: 1-2 hours
+
+Step 3 Documentation: Comprehensive guide (like this one)
+
+================================================================================
+END OF STEP 2 GUIDE
+================================================================================
+
+SUMMARY:
+--------
+You now have a complete, production-ready preprocessing and feature extraction
+pipeline with:
+
+✓ Configurable text preprocessing (TextPreprocessor)
+✓ TF-IDF feature extraction (EmailFeatureExtractor)
+✓ Configuration versioning (PipelineConfig)
+✓ Artifact management (ArtifactManager)
+✓ Comprehensive test suite (24 tests)
+✓ Save/load functionality
+✓ Cloud-compatible (no local dependencies)
+
+CRITICAL REMINDERS:
+------------------
+1. ALWAYS use the same vectorizer for training and inference
+2. ALWAYS save configuration with each model version
+3. Test preprocessing consistency before deploying
+4. Keep artifacts organized with versioning
+5. Run tests after any configuration changes
+
+NEXT ACTION:
+-----------
+When ready for Step 3, request: "Provide Step 3 guide in single .txt file"
+
+Good luck with Step 2 implementation!
+If you encounter issues, refer to Section 11 (Troubleshooting Guide).
+
+================================================================================
