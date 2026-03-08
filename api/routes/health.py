@@ -5,6 +5,7 @@ Provides endpoints for monitoring service health and readiness.
 """
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from datetime import datetime
 import sys
@@ -32,7 +33,7 @@ async def health_check(
     """
     # Check database connection
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db_status = "connected"
     except Exception:
         db_status = "disconnected"
@@ -72,7 +73,7 @@ async def readiness_probe(
     """
     # Check database
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
     except Exception:
         return {"status": "not_ready", "reason": "database_unavailable"}, 503
     
