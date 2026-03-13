@@ -4,7 +4,7 @@ Pydantic Models
 Defines all request and response models for API validation and documentation.
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -190,7 +190,7 @@ class PredictionListResponse(BaseModel):
 class FeedbackResponse(BaseModel):
     """Response model for feedback submission"""
     
-    feedback_id: int
+    feedback_id: Optional[int]
     prediction_id: int
     feedback_type: str
     correct_category: Optional[str]
@@ -200,6 +200,8 @@ class FeedbackResponse(BaseModel):
 
 class ModelInfoResponse(BaseModel):
     """Response model for model information"""
+
+    model_config = ConfigDict(protected_namespaces=())
     
     model_name: str
     version: str

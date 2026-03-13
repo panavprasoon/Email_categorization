@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from database.connection import DatabaseConnection
 from database.models import Prediction, InferenceMetadata
-from database.repository import PredictionRepository
+from database.repository import PredictionRepository, InferenceMetadataRepository
 
 
 class PredictionStore:
@@ -37,6 +37,7 @@ class PredictionStore:
         """Initialize prediction store."""
         self.db = DatabaseConnection()
         self.repo = PredictionRepository()
+        self.metadata_repo = InferenceMetadataRepository()
     
     def save_prediction(
         self,
@@ -83,40 +84,27 @@ class PredictionStore:
             )
             prediction_id = prediction.id
 
-        # Optionally save inference metadata
-        if inference_time_ms is not None or all_probabilities is not None:
-            self._save_metadata(
-                inference_time_ms=inference_time_ms,
-                all_probabilities=all_probabilities
-            )
+        # Update daily inference metadata for analytics/dashboarding
+        self._save_metadata(
+            category=category,
+            confidence=confidence
+        )
 
         return prediction_id
     
     def _save_metadata(
         self,
-        inference_time_ms: Optional[float] = None,
-        all_probabilities: Optional[Dict[str, float]] = None
+        category: str,
+        confidence: float
     ) -> None:
-        """Save inference metadata.
-
-        This stores a lightweight record of inference activity for monitoring.
-        The current schema is designed for daily aggregates, so we insert a record
-        per prediction for now (one row per inference) and rely on downstream
-        aggregation when needed.
-        """
-        from datetime import date
-
+        """Update daily inference metadata aggregates."""
         with self.db.get_session() as session:
-            metadata = InferenceMetadata(
-                date=date.today(),
-                total_predictions=1,
-                category_distribution=all_probabilities or {},
-                avg_confidence=None,
-                low_confidence_count=None,
-                created_at=datetime.now()
+            self.metadata_repo.upsert_prediction_aggregate(
+                session=session,
+                prediction_date=datetime.utcnow().date(),
+                predicted_label=category,
+                confidence=confidence
             )
-            session.add(metadata)
-            session.commit()
     
     def get_prediction(self, prediction_id: int) -> Optional[Prediction]:
         """Get prediction by ID.
@@ -163,7 +151,7 @@ class PredictionStore:
             result = session.execute(
                 text("""
                     SELECT * FROM predictions 
-                    ORDER BY predicted_at DESC 
+                    ORDER BY created_at DESC 
                     LIMIT :limit
                 """),
                 {"limit": limit}

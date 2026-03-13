@@ -8,7 +8,12 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 import time
 import logging
+import json
+import ipaddress
 from typing import Callable
+
+from database.connection import DatabaseConnection
+from database.repository import AuditLogRepository
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +65,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 f"RESPONSE [{request_id}] {response.status_code} "
                 f"in {process_time:.2f}ms"
             )
+
+            self._persist_audit_log(request, response.status_code, process_time, None)
             
             return response
             
@@ -73,5 +80,47 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 f"after {process_time:.2f}ms",
                 exc_info=True
             )
+
+            self._persist_audit_log(request, 500, process_time, str(e))
             
             raise
+
+    def _persist_audit_log(
+        self,
+        request: Request,
+        status_code: int,
+        latency_ms: float,
+        error_message: str | None
+    ) -> None:
+        """Persist request metrics to the audit_logs table for BI/operations reporting."""
+        payload = None
+        if request.method in {"POST", "PUT", "PATCH"}:
+            try:
+                body = getattr(request, "_body", None)
+                if body:
+                    payload = json.loads(body.decode("utf-8"))
+            except Exception:
+                payload = None
+
+        try:
+            client_ip = None
+            if request.client and request.client.host:
+                try:
+                    client_ip = str(ipaddress.ip_address(request.client.host))
+                except ValueError:
+                    client_ip = None
+
+            db = DatabaseConnection()
+            with db.get_session() as session:
+                AuditLogRepository.create(
+                    session=session,
+                    endpoint=request.url.path,
+                    method=request.method,
+                    status_code=status_code,
+                    latency_ms=latency_ms,
+                    ip_address=client_ip,
+                    error_message=error_message,
+                    request_payload=payload
+                )
+        except Exception as exc:
+            logger.warning(f"Failed to persist audit log: {exc}")

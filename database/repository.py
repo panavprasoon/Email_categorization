@@ -244,3 +244,48 @@ class AuditLogRepository:
         session.flush()
         return audit_log
 
+
+class InferenceMetadataRepository:
+    """Data access methods for daily inference metadata aggregation."""
+
+    @staticmethod
+    def upsert_prediction_aggregate(
+        session: Session,
+        prediction_date: date,
+        predicted_label: str,
+        confidence: float
+    ) -> InferenceMetadata:
+        """Upsert a daily aggregate row for a new prediction."""
+        metadata = (
+            session.query(InferenceMetadata)
+            .filter(InferenceMetadata.date == prediction_date)
+            .first()
+        )
+
+        if metadata is None:
+            metadata = InferenceMetadata(
+                date=prediction_date,
+                total_predictions=0,
+                category_distribution={},
+                avg_confidence=0.0,
+                low_confidence_count=0
+            )
+            session.add(metadata)
+            session.flush()
+
+        current_total = metadata.total_predictions or 0
+        new_total = current_total + 1
+        current_avg = metadata.avg_confidence or 0.0
+
+        metadata.total_predictions = new_total
+        metadata.avg_confidence = ((current_avg * current_total) + confidence) / new_total
+        metadata.low_confidence_count = (metadata.low_confidence_count or 0) + (1 if confidence < 0.5 else 0)
+
+        distribution = dict(metadata.category_distribution or {})
+        distribution[predicted_label] = int(distribution.get(predicted_label, 0)) + 1
+        metadata.category_distribution = distribution
+        metadata.created_at = datetime.utcnow()
+
+        session.flush()
+        return metadata
+

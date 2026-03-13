@@ -43,13 +43,36 @@ class FeedbackService:
         
         if not prediction:
             raise ResourceNotFoundError(resource="Prediction")
+
+        if request.feedback_type.value == "correct":
+            return FeedbackResponse(
+                feedback_id=None,
+                prediction_id=request.prediction_id,
+                feedback_type=request.feedback_type.value,
+                correct_category=prediction.predicted_label,
+                timestamp=datetime.utcnow(),
+                message="Prediction marked correct; no correction record created"
+            )
+
+        existing_feedback = self.db.query(Feedback).filter(
+            Feedback.prediction_id == request.prediction_id
+        ).first()
+
+        if existing_feedback:
+            return FeedbackResponse(
+                feedback_id=existing_feedback.id,
+                prediction_id=existing_feedback.prediction_id,
+                feedback_type=existing_feedback.feedback_source,
+                correct_category=existing_feedback.corrected_label,
+                timestamp=existing_feedback.created_at,
+                message="Feedback already exists for this prediction"
+            )
         
-        # Create feedback record
+        # Create correction record using current schema
         feedback = Feedback(
             prediction_id=request.prediction_id,
-            feedback_type=request.feedback_type.value,
-            correct_category=request.correct_category.value if request.correct_category else None,
-            comments=request.comments,
+            corrected_label=request.correct_category.value if request.correct_category else prediction.predicted_label,
+            feedback_source=request.feedback_type.value,
             created_at=datetime.utcnow()
         )
         
@@ -60,8 +83,8 @@ class FeedbackService:
         return FeedbackResponse(
             feedback_id=feedback.id,
             prediction_id=feedback.prediction_id,
-            feedback_type=feedback.feedback_type,
-            correct_category=feedback.correct_category,
+            feedback_type=feedback.feedback_source,
+            correct_category=feedback.corrected_label,
             timestamp=feedback.created_at
         )
     

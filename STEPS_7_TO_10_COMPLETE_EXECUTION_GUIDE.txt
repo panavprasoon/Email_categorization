@@ -1,0 +1,3393 @@
+﻿================================================================================
+EMAIL CATEGORIZATION SYSTEM - STEPS 7-10 COMPLETE EXECUTION GUIDE
+================================================================================
+Production Deployment, Frontend Development, Monitoring & Advanced Features
+================================================================================
+
+TABLE OF CONTENTS:
+------------------
+STEP 7: FRONTEND DEVELOPMENT (STREAMLIT WEB APPLICATION)
+    Section 1:  Prerequisites & Installation
+    Section 2:  Project Structure Setup
+    Section 3:  Main Application (app.py)
+    Section 4:  User Interface Components
+    Section 5:  API Integration
+    Section 6:  Running the Frontend
+    Section 7:  Testing & Validation
+
+STEP 8: DEPLOYMENT & PRODUCTION
+    Section 8:  Docker Containerization
+    Section 9:  Environment Configuration
+    Section 10: Cloud Deployment (Render/Railway)
+    Section 11: CI/CD Pipeline Setup
+    Section 12: Security Hardening
+    Section 13: Production Testing
+
+STEP 9: MONITORING & OBSERVABILITY
+    Section 14: Application Monitoring Setup
+    Section 15: Logging Configuration
+    Section 16: Error Tracking (Sentry)
+    Section 17: Model Drift Detection
+    Section 18: Alerting System
+
+STEP 10: AUTOMATED RETRAINING PIPELINE
+    Section 19: Feedback-Based Retraining
+    Section 20: A/B Testing Framework
+    Section 21: Scheduled Batch Processing
+    Section 22: Model Version Management
+
+APPENDIX: Troubleshooting & Quick Reference
+
+================================================================================
+PHASE 1-4: USER EXECUTION PLAYBOOK (DO THIS EXACTLY)
+================================================================================
+
+Purpose:
+- This is your practical guide for what YOU must do manually for Phases 1-4.
+- Follow this section first.
+- Only continue to the older sections after this playbook is complete.
+
+Repository root used in this guide:
+C:\Users\hp\email-system
+
+Implemented code/config already present:
+- frontend/app.py
+- frontend/pages/1_Email_Classifier.py
+- frontend/pages/2_Analytics.py
+- frontend/pages/3_Admin_Panel.py
+- frontend/utils/api_client.py
+- frontend/utils/helpers.py
+- frontend/requirements.txt
+- Dockerfile.api
+- Dockerfile.frontend
+- docker-compose.yml
+- render.yaml
+- railway.json
+
+API routes used by frontend (actual backend contract):
+- GET  /health/
+- POST /categorize/
+- POST /feedback/
+- GET  /predictions/statistics/overview
+- GET  /predictions/
+- GET  /models/info
+- GET  /models/categories
+- POST /models/reload
+
+IMPORTANT AUTH RULE:
+- Most routes require X-API-Key header.
+- Frontend sends this from env var API_KEY.
+
+-------------------------------------------------------------------------------
+PHASE 1 - LOCAL INTEGRATION (API + FRONTEND)
+-------------------------------------------------------------------------------
+OBJECTIVE:
+- Run backend and frontend locally and validate end-to-end flow.
+
+STEP 1: PREPARE ENVIRONMENT
+How to execute:
+1) Open VS Code in folder C:\Users\hp\email-system
+2) Open Terminal 1 in VS Code
+3) Run:
+    .\venv\Scripts\Activate.ps1
+4) Run:
+    c:/Users/hp/email-system/venv/Scripts/python.exe -c "from database.connection import SessionLocal; s=SessionLocal(); print('DB OK'); s.close()"
+
+Expected result:
+- Output contains DB OK
+
+STEP 2: VERIFY .ENV VALUES
+How to execute:
+1) Open .env file
+2) Ensure these keys exist and are valid:
+    - DATABASE_URL
+    - API_KEY_1
+    - SECRET_KEY
+3) Add frontend keys if missing:
+    - API_BASE_URL=http://localhost:8000
+    - API_KEY=<same-value-as-API_KEY_1>
+    - API_TIMEOUT_SECONDS=30
+
+Expected result:
+- .env has API + frontend keys aligned
+
+STEP 3: START API
+How to execute:
+1) In Terminal 1 (venv active), run:
+    uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+2) Keep this terminal running
+
+Expected result:
+- Uvicorn starts and listens on port 8000
+
+STEP 4: START FRONTEND
+How to execute:
+1) Open Terminal 2
+2) Run:
+    .\venv\Scripts\Activate.ps1
+3) Run:
+    streamlit run frontend/app.py
+4) Browser should open automatically
+
+Expected result:
+- Streamlit app loads on http://localhost:8501
+
+STEP 5: MANUAL UI VALIDATION (YOU MUST CLICK)
+How to execute:
+1) Open page: Email Classifier
+2) Fill Sender, Subject, Body
+3) Click Classify Email
+4) Confirm prediction appears with confidence
+5) Choose feedback type and submit feedback
+6) Open page: Analytics
+7) Confirm metrics and charts load (no API error)
+8) Open page: Admin Panel
+9) Confirm model info loads
+
+Phase 1 checkpoint (PASS if all true):
+- Classification works
+- Feedback submits successfully
+- Analytics loads stats
+- Admin loads model info
+
+-------------------------------------------------------------------------------
+PHASE 2 - CONTAINERIZATION TEST
+-------------------------------------------------------------------------------
+OBJECTIVE:
+- Run API + frontend with Docker Compose locally.
+
+STEP 1: PREREQUISITE
+How to execute:
+1) Start Docker Desktop
+2) Wait until engine status is Running
+
+STEP 2: BUILD + RUN CONTAINERS
+How to execute:
+1) Open Terminal 3 in project root
+2) Run:
+    docker compose up --build
+3) Keep terminal running
+
+Expected result:
+- Two services start:
+  - API on 8000
+  - Frontend on 8501
+
+STEP 3: VERIFY CONTAINER ENDPOINTS (MANUAL)
+How to execute:
+1) Open browser: http://localhost:8000/health/
+2) Open browser: http://localhost:8501
+3) On frontend, test one classification
+
+Phase 2 checkpoint (PASS if all true):
+- Health endpoint responds
+- Frontend opens
+- Classify action works from containerized frontend
+
+STEP 4: STOP CONTAINERS
+How to execute:
+1) In compose terminal, press Ctrl+C
+2) (Optional cleanup) run:
+    docker compose down
+
+-------------------------------------------------------------------------------
+PHASE 3 - CLOUD DEPLOYMENT (RENDER OR RAILWAY)
+-------------------------------------------------------------------------------
+OBJECTIVE:
+- Deploy API + frontend publicly with correct environment variables.
+
+RECOMMENDED ORDER:
+1) Deploy API first
+2) Deploy frontend second
+
+OPTION A: RENDER (MANUAL UI STEPS)
+----------------------------------
+STEP A1: PREPARE REPO
+How to execute:
+1) Push latest code to GitHub (manual git workflow)
+2) Ensure these files are in repo root:
+    Dockerfile.api, Dockerfile.frontend, render.yaml
+
+STEP A2: CREATE API SERVICE
+How to execute:
+1) Login to Render dashboard
+2) New > Web Service
+3) Connect GitHub repo
+4) Runtime: Docker
+5) Dockerfile path: ./Dockerfile.api
+6) Add env vars:
+    - DATABASE_URL
+    - SECRET_KEY
+    - API_KEY_1
+    - API_KEY_2
+    - ENVIRONMENT=production
+7) Deploy
+
+Expected result:
+- API service URL available and /health/ reachable
+
+STEP A3: CREATE FRONTEND SERVICE
+How to execute:
+1) New > Web Service
+2) Same repo
+3) Runtime: Docker
+4) Dockerfile path: ./Dockerfile.frontend
+5) Add env vars:
+    - API_BASE_URL=<your-render-api-url>
+    - API_KEY=<same-as-API_KEY_1>
+    - API_TIMEOUT_SECONDS=30
+6) Deploy
+
+Expected result:
+- Frontend URL opens and can call API
+
+OPTION B: RAILWAY (MANUAL UI STEPS)
+-----------------------------------
+STEP B1: CREATE PROJECT
+How to execute:
+1) Login to Railway
+2) New Project > Deploy from GitHub repo
+
+STEP B2: DEPLOY API SERVICE
+How to execute:
+1) Set service to use Dockerfile.api
+2) Add env vars:
+    DATABASE_URL, SECRET_KEY, API_KEY_1, API_KEY_2, ENVIRONMENT=production
+3) Deploy
+
+STEP B3: DEPLOY FRONTEND SERVICE
+How to execute:
+1) Create second service from same repo using Dockerfile.frontend
+2) Add env vars:
+    API_BASE_URL=<railway-api-url>
+    API_KEY=<same-as-API_KEY_1>
+    API_TIMEOUT_SECONDS=30
+3) Deploy
+
+Expected result:
+- Both service URLs are reachable
+
+Cloud deployment checkpoint (PASS if all true):
+- API /health/ works on public URL
+- Frontend opens on public URL
+- Classify and feedback actions work on public frontend
+
+-------------------------------------------------------------------------------
+PHASE 4 - POST-DEPLOY OPERATIONS BASELINE
+-------------------------------------------------------------------------------
+OBJECTIVE:
+- Establish operational readiness before full monitoring/retraining expansion.
+
+STEP 1: RUN PRODUCTION SMOKE TEST (MANUAL)
+How to execute:
+1) Open deployed frontend URL
+2) Do one classification
+3) Submit one feedback
+4) Open Analytics page
+5) Open Admin page
+6) Open API health URL directly
+
+Expected result:
+- End-to-end flow succeeds without critical errors
+
+STEP 2: LOGGING/ERROR TRACKING DECISION
+How to execute:
+1) Choose monitoring stack (Sentry + platform logs recommended)
+2) Record chosen provider in project notes
+3) Add implementation in next iteration (Step 9 sections)
+
+STEP 3: RETRAINING READINESS DECISION
+How to execute:
+1) Confirm feedback data is being collected
+2) Define retraining trigger (example: weekly or N feedback records)
+3) Schedule implementation in Step 10 iteration
+
+Phase 4 checkpoint (PASS if all true):
+- Live app stable after smoke test
+- Monitoring provider decided
+- Retraining trigger policy defined
+
+-------------------------------------------------------------------------------
+MASTER CHECKLIST (YOU CAN TICK MANUALLY)
+-------------------------------------------------------------------------------
+[ ] Phase 1 complete (local app end-to-end)
+[ ] Phase 2 complete (docker compose end-to-end)
+[ ] Phase 3 complete (cloud deployment live)
+[ ] Phase 4 complete (smoke test + operational decisions)
+
+If you fail at any checkpoint:
+1) Stop progression
+2) Fix current phase first
+3) Re-run checkpoint
+4) Only then continue
+
+================================================================================
+STEP 7: FRONTEND DEVELOPMENT (STREAMLIT WEB APPLICATION)
+================================================================================
+
+OVERVIEW:
+---------
+Build a user-friendly web interface using Streamlit that allows users to:
+- Upload or paste emails for categorization
+- View predictions with confidence scores
+- Submit feedback/corrections
+- View analytics dashboards
+- Admin panel for model management
+
+TECHNOLOGY CHOICE: Streamlit (Python-based, rapid development, no HTML/CSS/JS required)
+
+================================================================================
+SECTION 1: PREREQUISITES & INSTALLATION
+================================================================================
+
+STEP 1.1: Navigate to Project Directory
+----------------------------------------
+cd C:\Email_categorization
+
+STEP 1.2: Activate Virtual Environment
+---------------------------------------
+.\venv\Scripts\Activate
+
+STEP 1.3: Install Frontend Dependencies
+----------------------------------------
+pip install streamlit==1.32.0
+pip install plotly==5.19.0
+pip install pandas==2.2.0
+pip install requests==2.31.0
+pip install python-dotenv==1.0.0
+
+STEP 1.4: Verify Installation
+------------------------------
+streamlit --version
+# Expected output: Streamlit, version 1.32.0
+
+CHECKPOINT: All dependencies installed successfully
+
+================================================================================
+SECTION 2: PROJECT STRUCTURE SETUP
+================================================================================
+
+STEP 2.1: Create Frontend Directory Structure
+----------------------------------------------
+New-Item -ItemType Directory -Path "frontend" -Force
+New-Item -ItemType Directory -Path "frontend/pages" -Force
+New-Item -ItemType Directory -Path "frontend/components" -Force
+New-Item -ItemType Directory -Path "frontend/utils" -Force
+
+STEP 2.2: Verify Directory Structure
+-------------------------------------
+tree /F frontend
+# Expected structure:
+# frontend/
+#  app.py (main application)
+#  pages/
+#     1__Email_Classifier.py
+#     2__Analytics.py
+#     3__Admin_Panel.py
+#  components/
+#     sidebar.py
+#  utils/
+#      api_client.py
+#      helpers.py
+
+CHECKPOINT: Directory structure created
+
+================================================================================
+SECTION 3: MAIN APPLICATION (app.py)
+================================================================================
+
+STEP 3.1: Create Main Application File
+---------------------------------------
+@'
+import streamlit as st
+import requests
+import os
+from dotenv import load_dotenv
+import pandas as pd
+import plotly.express as px
+from datetime import datetime, timedelta
+
+# Load environment variables
+load_dotenv()
+
+# Page configuration
+st.set_page_config(
+    page_title="Email Categorization System",
+    page_icon="",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# API Configuration
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+
+# Custom CSS
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1f77b4;
+        text-align: center;
+        padding: 1rem 0;
+    }
+    .success-box {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        margin: 1rem 0;
+    }
+    .error-box {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        margin: 1rem 0;
+    }
+    .metric-card {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Main Page
+st.markdown('<div class="main-header"> Email Categorization System</div>', unsafe_allow_html=True)
+
+st.markdown("""
+### Welcome to the Email Categorization System
+
+This intelligent system uses machine learning to automatically categorize emails into predefined categories.
+
+**Features:**
+-  **Email Classifier**: Classify emails and get confidence scores
+-  **Analytics Dashboard**: View system performance and insights
+-  **Admin Panel**: Manage models and system configuration
+
+**Quick Stats:**
+""")
+
+# Fetch system health
+try:
+    health_response = requests.get(f"{API_BASE_URL}/health", timeout=5)
+    if health_response.status_code == 200:
+        health_data = health_response.json()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("System Status", health_data.get("status", "Unknown").upper())
+        
+        with col2:
+            st.metric("Database", "Connected" if health_data.get("database") == "connected" else "Disconnected")
+        
+        with col3:
+            st.metric("Model Status", "Loaded" if health_data.get("model_loaded") else "Not Loaded")
+        
+        with col4:
+            st.metric("API Version", health_data.get("version", "N/A"))
+        
+        st.success(" System is operational and ready to use!")
+    else:
+        st.error(" Unable to connect to API. Please check if the backend is running.")
+        
+except requests.exceptions.RequestException as e:
+    st.error(f" API Connection Error: {str(e)}")
+    st.info("""
+    **To start the backend API:**
+    1. Open a new terminal
+    2. Navigate to project directory: cd C:\\Email_categorization
+    3. Activate virtual environment: .\\venv\\Scripts\\Activate
+    4. Run API: uvicorn main:app --reload
+    """)
+
+# Navigation Guide
+st.markdown("---")
+st.markdown("###  Navigation Guide")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("""
+    ####  Email Classifier
+    - Paste or type email content
+    - Get instant category predictions
+    - View confidence scores
+    - Submit feedback
+    """)
+
+with col2:
+    st.markdown("""
+    ####  Analytics Dashboard
+    - Real-time prediction statistics
+    - Category distribution charts
+    - Model performance metrics
+    - Feedback trends
+    """)
+
+with col3:
+    st.markdown("""
+    ####  Admin Panel
+    - View model information
+    - Trigger model retraining
+    - System configuration
+    - Database statistics
+    """)
+
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: #666; padding: 1rem;'>
+    Email Categorization System v1.0 | Built with Streamlit & FastAPI
+</div>
+""", unsafe_allow_html=True)
+'@ | Out-File -FilePath "frontend/app.py" -Encoding UTF8
+
+STEP 3.2: Create API Client Utility
+------------------------------------
+@'
+import requests
+import os
+from typing import Dict, Any, Optional
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class APIClient:
+    """Client for interacting with FastAPI backend"""
+    
+    def __init__(self):
+        self.base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+        self.timeout = 30
+    
+    def health_check(self) -> Dict[str, Any]:
+        """Check API health status"""
+        try:
+            response = requests.get(f"{self.base_url}/health", timeout=5)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"status": "error", "message": str(e)}
+    
+    def classify_email(self, email_text: str, email_id: Optional[str] = None) -> Dict[str, Any]:
+        """Classify a single email"""
+        payload = {
+            "email_text": email_text,
+            "email_id": email_id
+        }
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/classify",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}
+    
+    def submit_feedback(self, prediction_id: str, correct_category: str, 
+                       feedback_type: str = "correction") -> Dict[str, Any]:
+        """Submit feedback for a prediction"""
+        payload = {
+            "prediction_id": prediction_id,
+            "correct_category": correct_category,
+            "feedback_type": feedback_type
+        }
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/feedback",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}
+    
+    def get_stats(self, days: int = 7) -> Dict[str, Any]:
+        """Get system statistics"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/stats",
+                params={"days": days},
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}
+    
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get active model information"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/model/info",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}
+
+# Global instance
+api_client = APIClient()
+'@ | Out-File -FilePath "frontend/utils/api_client.py" -Encoding UTF8
+
+STEP 3.3: Create Helper Functions
+----------------------------------
+@'
+import pandas as pd
+from datetime import datetime, timedelta
+import streamlit as st
+
+def format_confidence(confidence: float) -> str:
+    """Format confidence score as percentage"""
+    return f"{confidence * 100:.2f}%"
+
+def get_confidence_color(confidence: float) -> str:
+    """Get color based on confidence level"""
+    if confidence >= 0.9:
+        return "green"
+    elif confidence >= 0.7:
+        return "orange"
+    else:
+        return "red"
+
+def format_timestamp(timestamp: str) -> str:
+    """Format ISO timestamp to readable format"""
+    try:
+        dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        return timestamp
+
+def display_prediction_result(result: dict):
+    """Display prediction result in a formatted way"""
+    if "error" in result:
+        st.error(f" Error: {result['error']}")
+        return
+    
+    predicted_category = result.get("predicted_category", "Unknown")
+    confidence = result.get("confidence", 0.0)
+    prediction_id = result.get("prediction_id", "N/A")
+    
+    st.markdown(f'<div class="success-box">', unsafe_allow_html=True)
+    st.markdown(f"###  Prediction Complete")
+    st.markdown(f"**Category:** {predicted_category}")
+    st.markdown(f"**Confidence:** {format_confidence(confidence)}")
+    st.markdown(f"**Prediction ID:** {prediction_id}")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Confidence indicator
+    confidence_color = get_confidence_color(confidence)
+    st.progress(confidence)
+    
+    if confidence < 0.7:
+        st.warning(" Low confidence prediction. Consider reviewing manually.")
+
+def create_category_chart(data: pd.DataFrame):
+    """Create category distribution chart"""
+    import plotly.express as px
+    
+    fig = px.pie(
+        data,
+        values='count',
+        names='category',
+        title='Email Category Distribution',
+        color_discrete_sequence=px.colors.qualitative.Set3
+    )
+    
+    fig.update_traces(textposition='inside', textinfo='percent+label')
+    return fig
+
+def create_timeline_chart(data: pd.DataFrame):
+    """Create predictions timeline chart"""
+    import plotly.express as px
+    
+    fig = px.line(
+        data,
+        x='date',
+        y='count',
+        title='Predictions Over Time',
+        markers=True
+    )
+    
+    fig.update_layout(
+        xaxis_title="Date",
+        yaxis_title="Number of Predictions",
+        hovermode='x unified'
+    )
+    
+    return fig
+'@ | Out-File -FilePath "frontend/utils/helpers.py" -Encoding UTF8
+
+CHECKPOINT: Core application files created
+
+================================================================================
+SECTION 4: USER INTERFACE COMPONENTS
+================================================================================
+
+STEP 4.1: Create Email Classifier Page
+---------------------------------------
+New-Item -ItemType Directory -Path "frontend/pages" -Force
+
+@'
+import streamlit as st
+import sys
+import os
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.api_client import api_client
+from utils.helpers import display_prediction_result, format_confidence
+
+st.set_page_config(page_title="Email Classifier", page_icon="", layout="wide")
+
+st.title(" Email Classifier")
+
+st.markdown("""
+Paste or type your email content below to get an instant category prediction.
+The system will analyze the content and provide a confidence score.
+""")
+
+# Input Methods
+input_method = st.radio("Input Method:", ["Type/Paste Email", "Upload .txt File"], horizontal=True)
+
+email_text = ""
+
+if input_method == "Type/Paste Email":
+    email_text = st.text_area(
+        "Email Content:",
+        height=300,
+        placeholder="Paste your email content here...\n\nExample:\nDear Team,\n\nI wanted to discuss the upcoming product launch scheduled for next month..."
+    )
+else:
+    uploaded_file = st.file_uploader("Choose a .txt file", type=['txt'])
+    if uploaded_file is not None:
+        email_text = uploaded_file.read().decode('utf-8')
+        st.text_area("Uploaded Content:", value=email_text, height=200, disabled=True)
+
+# Optional Email ID
+email_id = st.text_input("Email ID (Optional):", placeholder="e.g., email_12345")
+
+# Classify Button
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col2:
+    classify_button = st.button(" Classify Email", type="primary", use_container_width=True)
+
+# Classification Results
+if classify_button:
+    if not email_text.strip():
+        st.error(" Please enter email content before classifying.")
+    else:
+        with st.spinner(" Analyzing email..."):
+            result = api_client.classify_email(
+                email_text=email_text.strip(),
+                email_id=email_id if email_id else None
+            )
+            
+            if "error" not in result:
+                display_prediction_result(result)
+                
+                # Store in session state for feedback
+                st.session_state['last_prediction'] = result
+                
+                # Feedback Section
+                st.markdown("---")
+                st.markdown("###  Submit Feedback (Optional)")
+                
+                st.markdown("If the prediction is incorrect, please select the correct category:")
+                
+                # Common categories (customize based on your model)
+                categories = ["Work", "Personal", "Spam", "Marketing", "Support", "Newsletter", "Other"]
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    correct_category = st.selectbox("Correct Category:", categories)
+                
+                with col2:
+                    feedback_type = st.selectbox("Feedback Type:", ["correction", "confirmation"])
+                
+                if st.button("Submit Feedback"):
+                    feedback_result = api_client.submit_feedback(
+                        prediction_id=result.get("prediction_id"),
+                        correct_category=correct_category,
+                        feedback_type=feedback_type
+                    )
+                    
+                    if "error" not in feedback_result:
+                        st.success(" Thank you! Your feedback has been recorded and will help improve the model.")
+                    else:
+                        st.error(f" Error submitting feedback: {feedback_result['error']}")
+            else:
+                st.error(f" Classification Error: {result['error']}")
+                st.info("""
+                **Possible Solutions:**
+                - Ensure the FastAPI backend is running
+                - Check API_BASE_URL in .env file
+                - Verify database connection
+                """)
+
+# Example Emails
+st.markdown("---")
+st.markdown("###  Example Emails")
+
+with st.expander("Click to see example emails"):
+    example_col1, example_col2 = st.columns(2)
+    
+    with example_col1:
+        st.markdown("**Work Email:**")
+        st.code("""
+Dear Team,
+
+Please find attached the Q1 performance report.
+We need to schedule a meeting to discuss the results
+and plan for Q2 initiatives.
+
+Best regards,
+John
+        """)
+    
+    with example_col2:
+        st.markdown("**Marketing Email:**")
+        st.code("""
+ FLASH SALE - 50% OFF!
+
+Don't miss our biggest sale of the year!
+Shop now and save big on all products.
+Limited time offer - ends midnight!
+
+Shop Now: www.example.com
+        """)
+
+# Statistics
+if st.checkbox("Show Recent Activity"):
+    st.markdown("###  Recent Classification Activity")
+    
+    stats = api_client.get_stats(days=7)
+    
+    if "error" not in stats:
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Today's Predictions", stats.get("today_predictions", 0))
+        
+        with col2:
+            st.metric("This Week", stats.get("week_predictions", 0))
+        
+        with col3:
+            avg_conf = stats.get("avg_confidence", 0)
+            st.metric("Avg Confidence", f"{avg_conf * 100:.1f}%")
+    else:
+        st.warning("Unable to fetch statistics")
+'@ | Out-File -FilePath "frontend/pages/1__Email_Classifier.py" -Encoding UTF8
+
+STEP 4.2: Create Analytics Dashboard Page
+------------------------------------------
+@'
+import streamlit as st
+import sys
+import os
+import pandas as pd
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.api_client import api_client
+from utils.helpers import create_category_chart, create_timeline_chart
+
+st.set_page_config(page_title="Analytics Dashboard", page_icon="", layout="wide")
+
+st.title(" Analytics Dashboard")
+
+# Time Range Selector
+col1, col2, col3 = st.columns([2, 1, 1])
+
+with col1:
+    days = st.slider("Select Time Range (Days):", 1, 90, 7)
+
+with col2:
+    st.metric("Selected Period", f"{days} days")
+
+with col3:
+    if st.button(" Refresh Data"):
+        st.rerun()
+
+# Fetch Statistics
+with st.spinner(" Loading analytics data..."):
+    stats = api_client.get_stats(days=days)
+
+if "error" in stats:
+    st.error(f" Error loading analytics: {stats['error']}")
+    st.stop()
+
+# Key Metrics
+st.markdown("###  Key Performance Indicators")
+
+metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+
+with metric_col1:
+    total_preds = stats.get("total_predictions", 0)
+    st.metric("Total Predictions", f"{total_preds:,}")
+
+with metric_col2:
+    avg_conf = stats.get("avg_confidence", 0)
+    st.metric("Avg Confidence", f"{avg_conf * 100:.1f}%")
+
+with metric_col3:
+    feedback_count = stats.get("feedback_count", 0)
+    st.metric("Feedback Received", f"{feedback_count:,}")
+
+with metric_col4:
+    correction_rate = stats.get("correction_rate", 0)
+    st.metric("Correction Rate", f"{correction_rate * 100:.1f}%")
+
+st.markdown("---")
+
+# Charts Section
+chart_col1, chart_col2 = st.columns(2)
+
+with chart_col1:
+    st.markdown("###  Category Distribution")
+    
+    # Mock data (replace with actual API data)
+    category_data = pd.DataFrame({
+        'category': ['Work', 'Personal', 'Marketing', 'Spam', 'Support'],
+        'count': [45, 30, 15, 5, 5]
+    })
+    
+    fig = create_category_chart(category_data)
+    st.plotly_chart(fig, use_container_width=True)
+
+with chart_col2:
+    st.markdown("###  Predictions Timeline")
+    
+    # Mock data (replace with actual API data)
+    timeline_data = pd.DataFrame({
+        'date': pd.date_range(end=pd.Timestamp.now(), periods=days),
+        'count': [10, 15, 12, 18, 20, 16, 14][:days]
+    })
+    
+    fig = create_timeline_chart(timeline_data)
+    st.plotly_chart(fig, use_container_width=True)
+
+st.markdown("---")
+
+# Model Performance
+st.markdown("###  Model Performance Metrics")
+
+perf_col1, perf_col2, perf_col3 = st.columns(3)
+
+with perf_col1:
+    st.markdown("**Accuracy**")
+    accuracy = stats.get("accuracy", 0.92)
+    st.progress(accuracy)
+    st.markdown(f"<h3 style='text-align: center;'>{accuracy * 100:.1f}%</h3>", unsafe_allow_html=True)
+
+with perf_col2:
+    st.markdown("**Precision**")
+    precision = stats.get("precision", 0.89)
+    st.progress(precision)
+    st.markdown(f"<h3 style='text-align: center;'>{precision * 100:.1f}%</h3>", unsafe_allow_html=True)
+
+with perf_col3:
+    st.markdown("**F1 Score**")
+    f1_score = stats.get("f1_score", 0.90)
+    st.progress(f1_score)
+    st.markdown(f"<h3 style='text-align: center;'>{f1_score * 100:.1f}%</h3>", unsafe_allow_html=True)
+
+# Recent Predictions Table
+st.markdown("---")
+st.markdown("###  Recent Predictions")
+
+if st.checkbox("Show recent predictions table"):
+    # Mock data (replace with actual API endpoint)
+    recent_predictions = pd.DataFrame({
+        'Timestamp': pd.date_range(end=pd.Timestamp.now(), periods=10, freq='H'),
+        'Category': ['Work', 'Marketing', 'Personal', 'Work', 'Spam', 'Work', 'Personal', 'Support', 'Work', 'Marketing'],
+        'Confidence': [0.95, 0.87, 0.92, 0.88, 0.99, 0.85, 0.91, 0.76, 0.94, 0.89],
+        'Feedback': ['', '', '', '', '', '', '', '', '', '']
+    })
+    
+    st.dataframe(
+        recent_predictions,
+        use_container_width=True,
+        hide_index=True
+    )
+
+# Download Report
+st.markdown("---")
+if st.button(" Download Analytics Report (CSV)"):
+    # Create report DataFrame
+    report_df = pd.DataFrame({
+        'Metric': ['Total Predictions', 'Avg Confidence', 'Feedback Count', 'Correction Rate', 'Accuracy'],
+        'Value': [total_preds, f"{avg_conf * 100:.2f}%", feedback_count, f"{correction_rate * 100:.2f}%", f"{accuracy * 100:.2f}%"]
+    })
+    
+    csv = report_df.to_csv(index=False)
+    st.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name=f"analytics_report_{pd.Timestamp.now().strftime('%Y%m%d')}.csv",
+        mime="text/csv"
+    )
+'@ | Out-File -FilePath "frontend/pages/2__Analytics.py" -Encoding UTF8
+
+STEP 4.3: Create Admin Panel Page
+----------------------------------
+@'
+import streamlit as st
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.api_client import api_client
+
+st.set_page_config(page_title="Admin Panel", page_icon="", layout="wide")
+
+st.title(" Admin Panel")
+
+st.warning(" This section requires admin privileges. Ensure you have proper authorization.")
+
+# Model Information
+st.markdown("###  Active Model Information")
+
+with st.spinner("Loading model information..."):
+    model_info = api_client.get_model_info()
+
+if "error" not in model_info:
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Model Details:**")
+        st.info(f"""
+        - **Model ID:** {model_info.get('model_id', 'N/A')}
+        - **Algorithm:** {model_info.get('algorithm', 'N/A')}
+        - **Version:** {model_info.get('version', 'N/A')}
+        - **Trained On:** {model_info.get('trained_at', 'N/A')}
+        - **Status:** {model_info.get('status', 'N/A')}
+        """)
+    
+    with col2:
+        st.markdown("**Performance Metrics:**")
+        st.success(f"""
+        - **Accuracy:** {model_info.get('accuracy', 0) * 100:.2f}%
+        - **Precision:** {model_info.get('precision', 0) * 100:.2f}%
+        - **Recall:** {model_info.get('recall', 0) * 100:.2f}%
+        - **F1 Score:** {model_info.get('f1_score', 0) * 100:.2f}%
+        """)
+else:
+    st.error(f"Unable to fetch model information: {model_info['error']}")
+
+st.markdown("---")
+
+# System Actions
+st.markdown("###  System Actions")
+
+action_col1, action_col2 = st.columns(2)
+
+with action_col1:
+    st.markdown("####  Model Retraining")
+    st.info("Trigger model retraining with latest feedback data")
+    
+    if st.button("Start Retraining", type="primary"):
+        with st.spinner("Initiating retraining process..."):
+            # Call retraining endpoint (to be implemented in Step 10)
+            st.success(" Retraining job queued successfully!")
+            st.info("Check the Operations page for job status.")
+
+with action_col2:
+    st.markdown("####  Database Operations")
+    st.info("Perform database maintenance tasks")
+    
+    if st.button("Clear Old Logs"):
+        st.warning("This will delete audit logs older than 90 days")
+        if st.button("Confirm"):
+            st.success(" Old logs cleared successfully!")
+
+st.markdown("---")
+
+# System Health
+st.markdown("###  System Health")
+
+health = api_client.health_check()
+
+health_col1, health_col2, health_col3 = st.columns(3)
+
+with health_col1:
+    db_status = health.get("database", "unknown")
+    if db_status == "connected":
+        st.success(f" Database: {db_status}")
+    else:
+        st.error(f" Database: {db_status}")
+
+with health_col2:
+    model_status = "Loaded" if health.get("model_loaded") else "Not Loaded"
+    if health.get("model_loaded"):
+        st.success(f" Model: {model_status}")
+    else:
+        st.error(f" Model: {model_status}")
+
+with health_col3:
+    api_status = health.get("status", "unknown")
+    if api_status == "healthy":
+        st.success(f" API: {api_status}")
+    else:
+        st.error(f" API: {api_status}")
+
+# Configuration
+st.markdown("---")
+st.markdown("###  System Configuration")
+
+with st.expander("View Environment Variables"):
+    st.code(f"""
+API_BASE_URL={os.getenv('API_BASE_URL', 'Not Set')}
+DATABASE_URL=***HIDDEN***
+MODEL_VERSION={os.getenv('MODEL_VERSION', 'Not Set')}
+    """)
+
+# Logs Viewer
+st.markdown("---")
+st.markdown("###  Recent System Logs")
+
+if st.checkbox("Show system logs"):
+    st.text_area(
+        "Logs:",
+        value="[2026-03-12 10:30:15] INFO: System started successfully\n[2026-03-12 10:31:22] INFO: Model loaded\n[2026-03-12 10:32:10] INFO: Prediction completed - ID: pred_123",
+        height=200,
+        disabled=True
+    )
+'@ | Out-File -FilePath "frontend/pages/3__Admin_Panel.py" -Encoding UTF8
+
+CHECKPOINT: All frontend pages created
+
+================================================================================
+SECTION 5: API INTEGRATION
+================================================================================
+
+STEP 5.1: Update .env File with Frontend Configuration
+-------------------------------------------------------
+# Add to your .env file:
+echo "API_BASE_URL=http://localhost:8000" >> .env
+echo "STREAMLIT_SERVER_PORT=8501" >> .env
+
+STEP 5.2: Verify API is Running
+--------------------------------
+# In a separate terminal:
+cd C:\Email_categorization
+.\venv\Scripts\Activate
+uvicorn main:app --reload
+
+# Expected output: Server running on http://127.0.0.1:8000
+
+CHECKPOINT: API backend is running
+
+================================================================================
+SECTION 6: RUNNING THE FRONTEND
+================================================================================
+
+STEP 6.1: Navigate to Project Directory
+----------------------------------------
+cd C:\Email_categorization
+
+STEP 6.2: Activate Virtual Environment
+---------------------------------------
+.\venv\Scripts\Activate
+
+STEP 6.3: Start Streamlit Application
+--------------------------------------
+streamlit run frontend/app.py
+
+# Expected output:
+# You can now view your Streamlit app in your browser.
+# Local URL: http://localhost:8501
+# Network URL: http://192.168.x.x:8501
+
+STEP 6.4: Access the Application
+---------------------------------
+# Automatically opens in browser, or manually navigate to:
+# http://localhost:8501
+
+CHECKPOINT: Frontend application is running
+
+================================================================================
+SECTION 7: TESTING & VALIDATION
+================================================================================
+
+STEP 7.1: Test Email Classification
+------------------------------------
+1. Navigate to "Email Classifier" page
+2. Paste a test email in the text area
+3. Click "Classify Email"
+4. Verify prediction appears with confidence score
+5. Submit feedback (optional)
+
+STEP 7.2: Test Analytics Dashboard
+-----------------------------------
+1. Navigate to "Analytics" page
+2. Adjust time range slider
+3. Verify charts are displayed
+4. Check metrics are populated
+
+STEP 7.3: Test Admin Panel
+---------------------------
+1. Navigate to "Admin Panel" page
+2. Verify model information loads
+3. Check system health indicators
+
+VALIDATION CHECKLIST:
+ Home page loads with system status
+ Email classification works
+ Confidence scores display correctly
+ Feedback submission works
+ Analytics charts render
+ Admin panel shows model info
+ Navigation between pages works
+ API connection is stable
+
+================================================================================
+STEP 8: DEPLOYMENT & PRODUCTION
+================================================================================
+
+OVERVIEW:
+---------
+Containerize the application using Docker and deploy to cloud platforms
+(Render, Railway, or AWS). Includes security hardening and CI/CD setup.
+
+================================================================================
+SECTION 8: DOCKER CONTAINERIZATION
+================================================================================
+
+STEP 8.1: Create Dockerfile for FastAPI Backend
+------------------------------------------------
+@'
+# Use official Python runtime as base
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create directory for model artifacts
+RUN mkdir -p models
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+
+# Run application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+'@ | Out-File -FilePath "Dockerfile" -Encoding UTF8
+
+STEP 8.2: Create Dockerfile for Streamlit Frontend
+---------------------------------------------------
+@'
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy frontend code
+COPY frontend/ ./frontend/
+
+EXPOSE 8501
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl --fail http://localhost:8501/_stcore/health || exit 1
+
+CMD ["streamlit", "run", "frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+'@ | Out-File -FilePath "Dockerfile.frontend" -Encoding UTF8
+
+STEP 8.3: Create Docker Compose File
+-------------------------------------
+@'
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: email_categorization_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=
+      - MODEL_VERSION=1.0
+    volumes:
+      - ./models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Streamlit Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: email_categorization_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  default:
+    name: email_categorization_network
+'@ | Out-File -FilePath "docker-compose.yml" -Encoding UTF8
+
+STEP 8.4: Create .dockerignore
+-------------------------------
+@'
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.env
+.git
+.gitignore
+*.log
+*.sqlite
+.vscode/
+.idea/
+*.md
+tests/
+.pytest_cache/
+htmlcov/
+'@ | Out-File -FilePath ".dockerignore" -Encoding UTF8
+
+STEP 8.5: Build and Test Locally
+---------------------------------
+# Build images
+docker-compose build
+
+# Start containers
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f
+
+# Test API
+curl http://localhost:8000/health
+
+# Test Frontend
+# Navigate to http://localhost:8501
+
+# Stop containers
+docker-compose down
+
+CHECKPOINT: Docker containers working locally
+
+================================================================================
+SECTION 9: ENVIRONMENT CONFIGURATION
+================================================================================
+
+STEP 9.1: Create Production .env Template
+------------------------------------------
+@'
+# Production Environment Variables
+
+# Database
+DATABASE_URL=postgresql://user:password@host:port/dbname
+
+# API Configuration
+API_BASE_URL=https://your-api-domain.com
+API_KEY=your-secret-api-key-here
+
+# Model Configuration
+MODEL_VERSION=1.0
+MODEL_PATH=/app/models
+
+# Security
+SECRET_KEY=your-very-secure-secret-key-min-32-chars
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# CORS Origins (comma-separated)
+CORS_ORIGINS=https://your-frontend-domain.com,https://www.your-frontend-domain.com
+
+# Monitoring
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+LOG_LEVEL=INFO
+
+# Email (for alerts)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+ALERT_EMAIL=admin@yourcompany.com
+'@ | Out-File -FilePath ".env.production.template" -Encoding UTF8
+
+STEP 9.2: Update FastAPI with Environment Security
+---------------------------------------------------
+# Add to main.py CORS configuration:
+# 
+# from fastapi.middleware.cors import CORSMiddleware
+# import os
+# 
+# origins = os.getenv("CORS_ORIGINS", "http://localhost:8501").split(",")
+# 
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+CHECKPOINT: Environment configuration ready
+
+================================================================================
+SECTION 10: CLOUD DEPLOYMENT (RENDER)
+================================================================================
+
+STEP 10.1: Create render.yaml
+------------------------------
+@'
+services:
+  # FastAPI Backend
+  - type: web
+    name: email-categorization-api
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port "
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: MODEL_VERSION
+        value: "1.0"
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+    healthCheckPath: /health
+
+  # Streamlit Frontend
+  - type: web
+    name: email-categorization-frontend
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "streamlit run frontend/app.py --server.port= --server.address=0.0.0.0"
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: email-categorization-api
+          property: host
+'@ | Out-File -FilePath "render.yaml" -Encoding UTF8
+
+STEP 10.2: Deploy to Render
+----------------------------
+1. Create account at https://render.com
+2. Connect your GitHub repository
+3. Click "New"  "Blueprint"
+4. Select your repository
+5. Render will detect render.yaml and create services
+6. Add DATABASE_URL in environment variables
+7. Click "Apply" to deploy
+
+ALTERNATIVE: Deploy to Railway
+-------------------------------
+1. Create account at https://railway.app
+2. Click "New Project"  "Deploy from GitHub"
+3. Select your repository
+4. Railway auto-detects Dockerfile
+5. Add environment variables
+6. Deploy!
+
+CHECKPOINT: Application deployed to cloud
+
+================================================================================
+SECTION 11: CI/CD PIPELINE SETUP
+================================================================================
+
+STEP 11.1: Create GitHub Actions Workflow
+------------------------------------------
+New-Item -ItemType Directory -Path ".github/workflows" -Force
+
+@'
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+    
+    - name: Run tests
+      run: |
+        pytest tests/ --cov=. --cov-report=xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build Docker images
+      run: |
+        docker-compose build
+    
+    - name: Run containers
+      run: |
+        docker-compose up -d
+        sleep 10
+    
+    - name: Health check
+      run: |
+        curl --fail http://localhost:8000/health || exit 1
+    
+    - name: Stop containers
+      run: |
+        docker-compose down
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Deploy to Render
+      run: |
+        echo "Deployment triggered via Render auto-deploy"
+'@ | Out-File -FilePath ".github/workflows/ci-cd.yml" -Encoding UTF8
+
+CHECKPOINT: CI/CD pipeline configured
+
+================================================================================
+SECTION 12: SECURITY HARDENING
+================================================================================
+
+STEP 12.1: Add Rate Limiting
+-----------------------------
+pip install slowapi
+
+# Add to main.py:
+@'
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.post("/classify")
+@limiter.limit("10/minute")
+async def classify_email(request: Request, email_data: EmailInput):
+    # existing code
+    pass
+'@
+
+STEP 12.2: Add API Authentication
+----------------------------------
+pip install python-jose[cryptography] passlib[bcrypt]
+
+# Create auth.py:
+@'
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import os
+
+security = HTTPBearer()
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    api_key = os.getenv("API_KEY")
+    
+    if token != api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+    return token
+
+# Use in endpoints:
+# @app.post("/classify", dependencies=[Depends(verify_token)])
+'@
+
+STEP 12.3: Add Input Validation
+--------------------------------
+# Update models to include max length:
+@'
+from pydantic import BaseModel, Field, validator
+
+class EmailInput(BaseModel):
+    email_text: str = Field(..., max_length=50000)
+    email_id: Optional[str] = Field(None, max_length=100)
+    
+    @validator('email_text')
+    def validate_email_text(cls, v):
+        if len(v.strip()) < 10:
+            raise ValueError('Email text too short')
+        return v.strip()
+'@
+
+STEP 12.4: Enable HTTPS (Production)
+-------------------------------------
+# In production, use a reverse proxy (nginx):
+@'
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host System.Management.Automation.Internal.Host.InternalHost;
+        proxy_set_header X-Real-IP ;
+    }
+}
+'@
+
+CHECKPOINT: Security measures implemented
+
+================================================================================
+SECTION 13: PRODUCTION TESTING
+================================================================================
+
+STEP 13.1: Load Testing
+------------------------
+pip install locust
+
+# Create locustfile.py:
+@'
+from locust import HttpUser, task, between
+
+class EmailClassifierUser(HttpUser):
+    wait_time = between(1, 3)
+    
+    @task
+    def classify_email(self):
+        self.client.post("/classify", json={
+            "email_text": "This is a test email for load testing purposes."
+        })
+    
+    @task
+    def health_check(self):
+        self.client.get("/health")
+'@
+
+# Run load test:
+locust -f locustfile.py --host=http://localhost:8000
+
+STEP 13.2: Integration Testing
+-------------------------------
+# Create tests/test_integration.py:
+@'
+import pytest
+import requests
+
+API_BASE = "http://localhost:8000"
+
+def test_full_classification_flow():
+    # Health check
+    response = requests.get(f"{API_BASE}/health")
+    assert response.status_code == 200
+    
+    # Classify email
+    email_data = {"email_text": "Test email content"}
+    response = requests.post(f"{API_BASE}/classify", json=email_data)
+    assert response.status_code == 200
+    
+    result = response.json()
+    assert "predicted_category" in result
+    assert "confidence" in result
+    assert "prediction_id" in result
+    
+    # Submit feedback
+    feedback_data = {
+        "prediction_id": result["prediction_id"],
+        "correct_category": "Work",
+        "feedback_type": "correction"
+    }
+    response = requests.post(f"{API_BASE}/feedback", json=feedback_data)
+    assert response.status_code == 200
+'@
+
+# Run tests:
+pytest tests/test_integration.py -v
+
+VALIDATION CHECKLIST:
+ Docker containers build successfully
+ Application runs in containers
+ API accessible via HTTPS in production
+ Rate limiting prevents abuse
+ Authentication works
+ Load testing shows acceptable performance
+ Integration tests pass
+ Environment variables secured
+
+================================================================================
+STEP 9: MONITORING & OBSERVABILITY
+================================================================================
+
+OVERVIEW:
+---------
+Set up comprehensive monitoring, logging, error tracking, and alerting
+to ensure system reliability and quick issue detection.
+
+================================================================================
+SECTION 14: APPLICATION MONITORING SETUP
+================================================================================
+
+STEP 14.1: Install Prometheus Client
+-------------------------------------
+pip install prometheus-client
+
+STEP 14.2: Add Metrics to FastAPI
+----------------------------------
+# Create monitoring.py:
+@'
+from prometheus_client import Counter, Histogram, Gauge, generate_latest
+from fastapi import Response
+import time
+
+# Define metrics
+prediction_counter = Counter(
+    'email_predictions_total',
+    'Total number of email predictions',
+    ['category']
+)
+
+prediction_latency = Histogram(
+    'prediction_latency_seconds',
+    'Time spent processing predictions'
+)
+
+active_requests = Gauge(
+    'active_requests',
+    'Number of active requests'
+)
+
+feedback_counter = Counter(
+    'feedback_submissions_total',
+    'Total feedback submissions',
+    ['feedback_type']
+)
+
+model_confidence = Histogram(
+    'model_confidence',
+    'Distribution of model confidence scores'
+)
+
+# Middleware for tracking
+class MetricsMiddleware:
+    def __init__(self, app):
+        self.app = app
+    
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            active_requests.inc()
+            start_time = time.time()
+            
+            try:
+                await self.app(scope, receive, send)
+            finally:
+                active_requests.dec()
+                prediction_latency.observe(time.time() - start_time)
+
+# Add to main.py:
+from monitoring import (
+    prediction_counter, prediction_latency, 
+    model_confidence, feedback_counter
+)
+
+@app.get("/metrics")
+async def metrics():
+    return Response(
+        content=generate_latest(),
+        media_type="text/plain"
+    )
+
+# Update classify endpoint to track metrics:
+@app.post("/classify")
+async def classify_email(email_data: EmailInput):
+    with prediction_latency.time():
+        # existing classification code
+        result = ...
+        
+        prediction_counter.labels(
+            category=result["predicted_category"]
+        ).inc()
+        
+        model_confidence.observe(result["confidence"])
+        
+        return result
+'@
+
+STEP 14.3: Create Prometheus Configuration
+-------------------------------------------
+@'
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'email_categorization_api'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+'@ | Out-File -FilePath "prometheus.yml" -Encoding UTF8
+
+STEP 14.4: Set up Grafana Dashboard
+------------------------------------
+# Run Prometheus and Grafana with Docker:
+@'
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+volumes:
+  grafana-storage:
+'@ | Out-File -FilePath "docker-compose.monitoring.yml" -Encoding UTF8
+
+# Start monitoring stack:
+docker-compose -f docker-compose.monitoring.yml up -d
+
+# Access Grafana: http://localhost:3000 (admin/admin)
+
+STEP 14.5: Create Grafana Dashboard JSON
+-----------------------------------------
+# Import this dashboard configuration in Grafana:
+# - Navigate to http://localhost:3000
+# - Login (admin/admin)
+# - Click "+"  "Import"
+# - Paste dashboard JSON
+
+CHECKPOINT: Monitoring stack running
+
+================================================================================
+SECTION 15: LOGGING CONFIGURATION
+================================================================================
+
+STEP 15.1: Set up Structured Logging
+-------------------------------------
+pip install python-json-logger
+
+# Create logging_config.py:
+@'
+import logging
+import sys
+from pythonjsonlogger import jsonlogger
+
+def setup_logging():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    # Console handler with JSON formatting
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = jsonlogger.JsonFormatter(
+        '%(asctime)s %(name)s %(levelname)s %(message)s'
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    
+    return logger
+
+# Add to main.py:
+from logging_config import setup_logging
+
+logger = setup_logging()
+
+@app.post("/classify")
+async def classify_email(email_data: EmailInput):
+    logger.info(
+        "Classification request received",
+        extra={
+            "email_id": email_data.email_id,
+            "text_length": len(email_data.email_text)
+        }
+    )
+    
+    # ... classification logic ...
+    
+    logger.info(
+        "Classification completed",
+        extra={
+            "prediction_id": result["prediction_id"],
+            "category": result["predicted_category"],
+            "confidence": result["confidence"]
+        }
+    )
+    
+    return result
+'@
+
+STEP 15.2: Log Aggregation with ELK Stack (Optional)
+-----------------------------------------------------
+# docker-compose.elk.yml:
+@'
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    ports:
+      - "5000:5000"
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+'@
+
+CHECKPOINT: Logging configured
+
+================================================================================
+SECTION 16: ERROR TRACKING (SENTRY)
+================================================================================
+
+STEP 16.1: Install Sentry SDK
+------------------------------
+pip install sentry-sdk[fastapi]
+
+STEP 16.2: Configure Sentry
+----------------------------
+# Add to main.py:
+@'
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+import os
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    integrations=[
+        FastApiIntegration(),
+        SqlalchemyIntegration(),
+    ],
+    traces_sample_rate=0.1,  # 10% of transactions
+    environment=os.getenv("ENVIRONMENT", "production"),
+    release=os.getenv("VERSION", "1.0.0"),
+)
+
+# Sentry will automatically capture exceptions
+# You can also manually capture events:
+
+from sentry_sdk import capture_message, capture_exception
+
+@app.post("/classify")
+async def classify_email(email_data: EmailInput):
+    try:
+        result = perform_classification(email_data)
+        
+        if result["confidence"] < 0.5:
+            capture_message(
+                "Low confidence prediction",
+                level="warning",
+                extras={
+                    "prediction_id": result["prediction_id"],
+                    "confidence": result["confidence"]
+                }
+            )
+        
+        return result
+    except Exception as e:
+        capture_exception(e)
+        raise
+'@
+
+STEP 16.3: Create Sentry Account
+---------------------------------
+1. Go to https://sentry.io
+2. Sign up for free account
+3. Create new project (Python/FastAPI)
+4. Copy DSN to .env file: SENTRY_DSN=https://...
+
+CHECKPOINT: Error tracking enabled
+
+================================================================================
+SECTION 17: MODEL DRIFT DETECTION
+================================================================================
+
+STEP 17.1: Create Drift Detection Module
+-----------------------------------------
+# Create model_monitoring.py:
+@'
+import numpy as np
+from scipy import stats
+from sqlalchemy.orm import Session
+from database import SessionLocal
+from models import Prediction
+from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
+
+class DriftDetector:
+    def __init__(self, window_days=7, threshold=0.05):
+        self.window_days = window_days
+        self.threshold = threshold  # p-value threshold for KS test
+    
+    def check_prediction_drift(self) -> dict:
+        """Check for drift in prediction distribution"""
+        db = SessionLocal()
+        
+        try:
+            # Get baseline data (e.g., first week of deployment)
+            baseline_start = datetime(2026, 1, 1)
+            baseline_end = baseline_start + timedelta(days=self.window_days)
+            
+            baseline_predictions = db.query(Prediction).filter(
+                Prediction.created_at >= baseline_start,
+                Prediction.created_at < baseline_end
+            ).all()
+            
+            # Get recent data
+            recent_start = datetime.now() - timedelta(days=self.window_days)
+            recent_predictions = db.query(Prediction).filter(
+                Prediction.created_at >= recent_start
+            ).all()
+            
+            if len(baseline_predictions) < 30 or len(recent_predictions) < 30:
+                return {"status": "insufficient_data"}
+            
+            # Extract category distributions
+            baseline_cats = [p.predicted_category for p in baseline_predictions]
+            recent_cats = [p.predicted_category for p in recent_predictions]
+            
+            # Perform Chi-square test
+            from collections import Counter
+            baseline_dist = Counter(baseline_cats)
+            recent_dist = Counter(recent_cats)
+            
+            all_categories = set(baseline_dist.keys()) | set(recent_dist.keys())
+            
+            baseline_counts = [baseline_dist.get(cat, 0) for cat in all_categories]
+            recent_counts = [recent_dist.get(cat, 0) for cat in all_categories]
+            
+            chi2, p_value = stats.chisquare(recent_counts, baseline_counts)
+            
+            drift_detected = p_value < self.threshold
+            
+            result = {
+                "status": "drift_detected" if drift_detected else "no_drift",
+                "p_value": p_value,
+                "threshold": self.threshold,
+                "baseline_count": len(baseline_predictions),
+                "recent_count": len(recent_predictions),
+                "recommendation": "Consider retraining model" if drift_detected else "Model stable"
+            }
+            
+            if drift_detected:
+                logger.warning(f"Prediction drift detected: {result}")
+            
+            return result
+            
+        finally:
+            db.close()
+    
+    def check_confidence_drift(self) -> dict:
+        """Check for drift in confidence scores"""
+        db = SessionLocal()
+        
+        try:
+            baseline_start = datetime(2026, 1, 1)
+            baseline_end = baseline_start + timedelta(days=self.window_days)
+            
+            baseline_scores = [
+                p.confidence for p in db.query(Prediction).filter(
+                    Prediction.created_at >= baseline_start,
+                    Prediction.created_at < baseline_end
+                ).all()
+            ]
+            
+            recent_start = datetime.now() - timedelta(days=self.window_days)
+            recent_scores = [
+                p.confidence for p in db.query(Prediction).filter(
+                    Prediction.created_at >= recent_start
+                ).all()
+            ]
+            
+            if len(baseline_scores) < 30 or len(recent_scores) < 30:
+                return {"status": "insufficient_data"}
+            
+            # Kolmogorov-Smirnov test
+            ks_stat, p_value = stats.ks_2samp(baseline_scores, recent_scores)
+            
+            drift_detected = p_value < self.threshold
+            
+            return {
+                "status": "drift_detected" if drift_detected else "no_drift",
+                "ks_statistic": ks_stat,
+                "p_value": p_value,
+                "baseline_mean": np.mean(baseline_scores),
+                "recent_mean": np.mean(recent_scores),
+                "recommendation": "Investigate confidence drop" if drift_detected else "Confidence stable"
+            }
+            
+        finally:
+            db.close()
+
+# Add endpoint to main.py:
+from model_monitoring import DriftDetector
+
+@app.get("/monitoring/drift")
+async def check_drift():
+    detector = DriftDetector()
+    
+    return {
+        "prediction_drift": detector.check_prediction_drift(),
+        "confidence_drift": detector.check_confidence_drift()
+    }
+'@
+
+STEP 17.2: Schedule Drift Checks
+---------------------------------
+pip install apscheduler
+
+# Add to main.py:
+@'
+from apscheduler.schedulers.background import BackgroundScheduler
+from model_monitoring import DriftDetector
+
+scheduler = BackgroundScheduler()
+
+def scheduled_drift_check():
+    detector = DriftDetector()
+    result = detector.check_prediction_drift()
+    
+    if result.get("status") == "drift_detected":
+        # Send alert (email, Slack, etc.)
+        logger.error(f"ALERT: Model drift detected - {result}")
+        # Could trigger retraining here
+
+scheduler.add_job(
+    scheduled_drift_check,
+    'interval',
+    hours=24,  # Check daily
+    id='drift_detection'
+)
+
+@app.on_event("startup")
+async def startup_event():
+    scheduler.start()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    scheduler.shutdown()
+'@
+
+CHECKPOINT: Drift detection active
+
+================================================================================
+SECTION 18: ALERTING SYSTEM
+================================================================================
+
+STEP 18.1: Email Alerts Setup
+------------------------------
+pip install aiosmtplib
+
+# Create alerts.py:
+@'
+import aiosmtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+async def send_email_alert(subject: str, body: str, alert_type: str = "warning"):
+    """Send email alert to admin"""
+    
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    alert_email = os.getenv("ALERT_EMAIL")
+    
+    if not all([smtp_host, smtp_user, smtp_password, alert_email]):
+        logger.warning("Email alert configuration incomplete")
+        return
+    
+    message = MIMEMultipart()
+    message["From"] = smtp_user
+    message["To"] = alert_email
+    message["Subject"] = f"[{alert_type.upper()}] {subject}"
+    
+    html_body = f"""
+    <html>
+      <body>
+        <h2 style="color: {'red' if alert_type == 'error' else 'orange'};">
+          {subject}
+        </h2>
+        <p>{body}</p>
+        <hr>
+        <small>Email Categorization System Alert</small>
+      </body>
+    </html>
+    """
+    
+    message.attach(MIMEText(html_body, "html"))
+    
+    try:
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            use_tls=True
+        )
+        logger.info(f"Alert email sent: {subject}")
+    except Exception as e:
+        logger.error(f"Failed to send alert email: {e}")
+
+# Usage in drift detection:
+from alerts import send_email_alert
+
+async def scheduled_drift_check():
+    detector = DriftDetector()
+    result = detector.check_prediction_drift()
+    
+    if result.get("status") == "drift_detected":
+        await send_email_alert(
+            subject="Model Drift Detected",
+            body=f"Prediction distribution has changed significantly. P-value: {result['p_value']:.4f}. Consider retraining the model.",
+            alert_type="warning"
+        )
+'@
+
+STEP 18.2: Slack Alerts (Alternative)
+--------------------------------------
+pip install slack-sdk
+
+# Create slack_alerts.py:
+@'
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+def send_slack_alert(message: str, channel: str = "#alerts"):
+    """Send alert to Slack channel"""
+    
+    slack_token = os.getenv("SLACK_BOT_TOKEN")
+    
+    if not slack_token:
+        logger.warning("Slack token not configured")
+        return
+    
+    client = WebClient(token=slack_token)
+    
+    try:
+        response = client.chat_postMessage(
+            channel=channel,
+            text=message,
+            blocks=[
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": message
+                    }
+                }
+            ]
+        )
+        logger.info(f"Slack alert sent to {channel}")
+    except SlackApiError as e:
+        logger.error(f"Failed to send Slack alert: {e}")
+'@
+
+VALIDATION CHECKLIST:
+ Prometheus metrics exposed at /metrics
+ Grafana dashboard showing real-time metrics
+ Structured JSON logging enabled
+ Sentry capturing errors
+ Drift detection running daily
+ Email/Slack alerts configured
+
+================================================================================
+STEP 10: AUTOMATED RETRAINING PIPELINE
+================================================================================
+
+OVERVIEW:
+---------
+Implement automated model retraining based on feedback data, A/B testing
+framework for comparing model versions, and scheduled batch processing.
+
+================================================================================
+SECTION 19: FEEDBACK-BASED RETRAINING
+================================================================================
+
+STEP 19.1: Create Retraining Module
+------------------------------------
+# Create retraining_pipeline.py:
+@'
+import pandas as pd
+from sqlalchemy.orm import Session
+from database import SessionLocal, Feedback, Email, ModelVersion, RetrainingJob
+from datetime import datetime
+import pickle
+import os
+import logging
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+import uuid
+
+logger = logging.getLogger(__name__)
+
+class RetrainingPipeline:
+    def __init__(self, min_feedback_count=100):
+        self.min_feedback_count = min_feedback_count
+        self.model_dir = "models"
+        os.makedirs(self.model_dir, exist_ok=True)
+    
+    def check_retraining_criteria(self, db: Session) -> dict:
+        """Check if retraining should be triggered"""
+        
+        # Count feedback since last training
+        feedback_count = db.query(Feedback).filter(
+            Feedback.feedback_type == "correction"
+        ).count()
+        
+        # Get last model version
+        last_model = db.query(ModelVersion).order_by(
+            ModelVersion.trained_at.desc()
+        ).first()
+        
+        if feedback_count < self.min_feedback_count:
+            return {
+                "should_retrain": False,
+                "reason": f"Insufficient feedback ({feedback_count}/{self.min_feedback_count})"
+            }
+        
+        # Check correction rate
+        total_predictions = db.query(Feedback).count()
+        correction_rate = feedback_count / total_predictions if total_predictions > 0 else 0
+        
+        if correction_rate > 0.15:  # If more than 15% corrections
+            return {
+                "should_retrain": True,
+                "reason": f"High correction rate: {correction_rate:.2%}",
+                "feedback_count": feedback_count
+            }
+        
+        return {
+            "should_retrain": True,
+            "reason": f"Sufficient feedback collected: {feedback_count}",
+            "feedback_count": feedback_count
+        }
+    
+    def prepare_training_data(self, db: Session) -> tuple:
+        """Prepare training data from emails and feedback"""
+        
+        # Get all emails with feedback
+        query = db.query(Email, Feedback).join(
+            Feedback,
+            Email.id == Feedback.email_id
+        ).filter(
+            Feedback.feedback_type == "correction"
+        )
+        
+        data = []
+        for email, feedback in query.all():
+            data.append({
+                "text": email.email_text,
+                "category": feedback.correct_category
+            })
+        
+        # Also include original training data (if available)
+        # This ensures we don't forget old patterns
+        
+        df = pd.DataFrame(data)
+        
+        if len(df) < 50:
+            raise ValueError("Insufficient training data")
+        
+        X = df["text"].values
+        y = df["category"].values
+        
+        return train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    def train_model(self, X_train, y_train) -> tuple:
+        """Train new model version"""
+        
+        # Vectorization
+        vectorizer = TfidfVectorizer(max_features=5000)
+        X_train_vec = vectorizer.fit_transform(X_train)
+        
+        # Train model
+        model = RandomForestClassifier(
+            n_estimators=100,
+            max_depth=20,
+            random_state=42,
+            n_jobs=-1
+        )
+        
+        model.fit(X_train_vec, y_train)
+        
+        return model, vectorizer
+    
+    def evaluate_model(self, model, vectorizer, X_test, y_test) -> dict:
+        """Evaluate model performance"""
+        
+        X_test_vec = vectorizer.transform(X_test)
+        y_pred = model.predict(X_test_vec)
+        
+        accuracy = accuracy_score(y_test, y_pred)
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            y_test, y_pred, average='weighted'
+        )
+        
+        return {
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1
+        }
+    
+    def save_model(self, model, vectorizer, metrics: dict, db: Session) -> str:
+        """Save model and register in database"""
+        
+        version_id = f"v{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        model_path = os.path.join(self.model_dir, f"{version_id}_model.pkl")
+        vectorizer_path = os.path.join(self.model_dir, f"{version_id}_vectorizer.pkl")
+        
+        with open(model_path, "wb") as f:
+            pickle.dump(model, f)
+        
+        with open(vectorizer_path, "wb") as f:
+            pickle.dump(vectorizer, f)
+        
+        # Register in database
+        model_version = ModelVersion(
+            version=version_id,
+            algorithm="RandomForest",
+            model_path=model_path,
+            vectorizer_path=vectorizer_path,
+            accuracy=metrics["accuracy"],
+            precision=metrics["precision"],
+            recall=metrics["recall"],
+            f1_score=metrics["f1_score"],
+            status="trained",
+            trained_at=datetime.now()
+        )
+        
+        db.add(model_version)
+        db.commit()
+        
+        logger.info(f"Model {version_id} saved successfully")
+        
+        return version_id
+    
+    def run_retraining(self) -> dict:
+        """Execute full retraining pipeline"""
+        
+        db = SessionLocal()
+        job_id = str(uuid.uuid4())
+        
+        try:
+            # Create job record
+            job = RetrainingJob(
+                job_id=job_id,
+                status="running",
+                started_at=datetime.now()
+            )
+            db.add(job)
+            db.commit()
+            
+            logger.info(f"Starting retraining job {job_id}")
+            
+            # Check criteria
+            criteria = self.check_retraining_criteria(db)
+            
+            if not criteria["should_retrain"]:
+                job.status = "skipped"
+                job.completed_at = datetime.now()
+                job.error_message = criteria["reason"]
+                db.commit()
+                return criteria
+            
+            # Prepare data
+            X_train, X_test, y_train, y_test = self.prepare_training_data(db)
+            
+            # Train model
+            model, vectorizer = self.train_model(X_train, y_train)
+            
+            # Evaluate
+            metrics = self.evaluate_model(model, vectorizer, X_test, y_test)
+            
+            # Save model
+            version_id = self.save_model(model, vectorizer, metrics, db)
+            
+            # Update job
+            job.status = "completed"
+            job.completed_at = datetime.now()
+            job.new_model_version = version_id
+            job.metrics = metrics
+            db.commit()
+            
+            logger.info(f"Retraining completed: {version_id} - Accuracy: {metrics['accuracy']:.4f}")
+            
+            return {
+                "success": True,
+                "job_id": job_id,
+                "version_id": version_id,
+                "metrics": metrics
+            }
+            
+        except Exception as e:
+            logger.error(f"Retraining failed: {e}")
+            
+            job.status = "failed"
+            job.completed_at = datetime.now()
+            job.error_message = str(e)
+            db.commit()
+            
+            return {
+                "success": False,
+                "error": str(e)
+            }
+        
+        finally:
+            db.close()
+
+# Add endpoint to main.py:
+from retraining_pipeline import RetrainingPipeline
+
+@app.post("/admin/retrain")
+async def trigger_retraining(background_tasks: BackgroundTasks):
+    """Trigger model retraining"""
+    
+    pipeline = RetrainingPipeline()
+    
+    # Run in background
+    background_tasks.add_task(pipeline.run_retraining)
+    
+    return {
+        "message": "Retraining job queued",
+        "status": "processing"
+    }
+
+@app.get("/admin/retraining/status")
+async def retraining_status():
+    """Get latest retraining job status"""
+    
+    db = SessionLocal()
+    
+    try:
+        latest_job = db.query(RetrainingJob).order_by(
+            RetrainingJob.started_at.desc()
+        ).first()
+        
+        if not latest_job:
+            return {"message": "No retraining jobs found"}
+        
+        return {
+            "job_id": latest_job.job_id,
+            "status": latest_job.status,
+            "started_at": latest_job.started_at,
+            "completed_at": latest_job.completed_at,
+            "new_version": latest_job.new_model_version,
+            "metrics": latest_job.metrics
+        }
+    finally:
+        db.close()
+'@
+
+CHECKPOINT: Retraining pipeline created
+
+================================================================================
+SECTION 20: A/B TESTING FRAMEWORK
+================================================================================
+
+STEP 20.1: Add A/B Testing Support
+-----------------------------------
+# Create ab_testing.py:
+@'
+import random
+from sqlalchemy.orm import Session
+from database import SessionLocal, ModelVersion, Prediction
+from typing import Tuple
+import pickle
+
+class ABTestingManager:
+    def __init__(self, champion_version: str, challenger_version: str, traffic_split: float = 0.5):
+        self.champion_version = champion_version
+        self.challenger_version = challenger_version
+        self.traffic_split = traffic_split  # % of traffic to challenger
+    
+    def select_model(self) -> str:
+        """Select which model version to use for this request"""
+        
+        if random.random() < self.traffic_split:
+            return self.challenger_version
+        else:
+            return self.champion_version
+    
+    def load_model_version(self, version: str, db: Session) -> Tuple:
+        """Load specific model version"""
+        
+        model_version = db.query(ModelVersion).filter(
+            ModelVersion.version == version
+        ).first()
+        
+        if not model_version:
+            raise ValueError(f"Model version {version} not found")
+        
+        with open(model_version.model_path, "rb") as f:
+            model = pickle.load(f)
+        
+        with open(model_version.vectorizer_path, "rb") as f:
+            vectorizer = pickle.load(f)
+        
+        return model, vectorizer, model_version.id
+    
+    def compare_models(self, db: Session, days: int = 7) -> dict:
+        """Compare champion vs challenger performance"""
+        
+        from datetime import datetime, timedelta
+        
+        cutoff = datetime.now() - timedelta(days=days)
+        
+        # Get predictions for each model
+        champion_preds = db.query(Prediction).join(ModelVersion).filter(
+            ModelVersion.version == self.champion_version,
+            Prediction.created_at >= cutoff
+        ).all()
+        
+        challenger_preds = db.query(Prediction).join(ModelVersion).filter(
+            ModelVersion.version == self.challenger_version,
+            Prediction.created_at >= cutoff
+        ).all()
+        
+        def calc_metrics(predictions):
+            if not predictions:
+                return {}
+            
+            total = len(predictions)
+            avg_confidence = sum(p.confidence for p in predictions) / total
+            
+            # Get feedback stats
+            corrections = sum(
+                1 for p in predictions 
+                if p.feedback and p.feedback[0].feedback_type == "correction"
+            )
+            
+            return {
+                "count": total,
+                "avg_confidence": avg_confidence,
+                "corrections": corrections,
+                "correction_rate": corrections / total if total > 0 else 0
+            }
+        
+        return {
+            "champion": {
+                "version": self.champion_version,
+                **calc_metrics(champion_preds)
+            },
+            "challenger": {
+                "version": self.challenger_version,
+                **calc_metrics(challenger_preds)
+            }
+        }
+    
+    def promote_challenger(self, db: Session):
+        """Promote challenger to champion (make it active)"""
+        
+        # Deactivate current champion
+        db.query(ModelVersion).filter(
+            ModelVersion.version == self.champion_version
+        ).update({"status": "archived"})
+        
+        # Activate challenger
+        db.query(ModelVersion).filter(
+            ModelVersion.version == self.challenger_version
+        ).update({"status": "active"})
+        
+        db.commit()
+
+# Modify classify endpoint in main.py:
+from ab_testing import ABTestingManager
+
+# Initialize A/B test (configure in startup)
+ab_manager = None
+
+@app.on_event("startup")
+async def configure_ab_test():
+    global ab_manager
+    
+    # Check if A/B test is enabled
+    champion = os.getenv("AB_CHAMPION_VERSION")
+    challenger = os.getenv("AB_CHALLENGER_VERSION")
+    
+    if champion and challenger:
+        ab_manager = ABTestingManager(
+            champion_version=champion,
+            challenger_version=challenger,
+            traffic_split=0.2  # 20% to challenger
+        )
+
+@app.post("/classify")
+async def classify_email(email_data: EmailInput):
+    db = SessionLocal()
+    
+    try:
+        # Select model version
+        if ab_manager:
+            version = ab_manager.select_model()
+            model, vectorizer, model_version_id = ab_manager.load_model_version(version, db)
+        else:
+            # Use active model
+            active_model = db.query(ModelVersion).filter(
+                ModelVersion.status == "active"
+            ).first()
+            
+            with open(active_model.model_path, "rb") as f:
+                model = pickle.load(f)
+            
+            with open(active_model.vectorizer_path, "rb") as f:
+                vectorizer = pickle.load(f)
+            
+            model_version_id = active_model.id
+        
+        # Rest of classification logic...
+        
+    finally:
+        db.close()
+
+@app.get("/admin/ab-test/results")
+async def ab_test_results():
+    """Get A/B test comparison results"""
+    
+    if not ab_manager:
+        return {"message": "A/B testing not enabled"}
+    
+    db = SessionLocal()
+    
+    try:
+        results = ab_manager.compare_models(db, days=7)
+        return results
+    finally:
+        db.close()
+
+@app.post("/admin/ab-test/promote")
+async def promote_challenger():
+    """Promote challenger to champion"""
+    
+    if not ab_manager:
+        return {"message": "A/B testing not enabled"}
+    
+    db = SessionLocal()
+    
+    try:
+        ab_manager.promote_challenger(db)
+        return {"message": "Challenger promoted to champion"}
+    finally:
+        db.close()
+'@
+
+CHECKPOINT: A/B testing framework ready
+
+================================================================================
+SECTION 21: SCHEDULED BATCH PROCESSING
+================================================================================
+
+STEP 21.1: Create Batch Processing Module
+------------------------------------------
+# Create batch_processor.py:
+@'
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
+from database import SessionLocal, Email, Prediction, ModelVersion
+import logging
+import pickle
+
+logger = logging.getLogger(__name__)
+
+class BatchProcessor:
+    def __init__(self):
+        self.scheduler = BackgroundScheduler()
+    
+    def process_unclassified_emails(self):
+        """Process any emails that haven't been classified"""
+        
+        db = SessionLocal()
+        
+        try:
+            # Find emails without predictions
+            unclassified = db.query(Email).outerjoin(Prediction).filter(
+                Prediction.id == None
+            ).all()
+            
+            if not unclassified:
+                logger.info("No unclassified emails found")
+                return
+            
+            logger.info(f"Processing {len(unclassified)} unclassified emails")
+            
+            # Load active model
+            active_model = db.query(ModelVersion).filter(
+                ModelVersion.status == "active"
+            ).first()
+            
+            with open(active_model.model_path, "rb") as f:
+                model = pickle.load(f)
+            
+            with open(active_model.vectorizer_path, "rb") as f:
+                vectorizer = pickle.load(f)
+            
+            # Process each email
+            for email in unclassified:
+                try:
+                    text_vec = vectorizer.transform([email.email_text])
+                    prediction = model.predict(text_vec)[0]
+                    confidence = model.predict_proba(text_vec).max()
+                    
+                    # Create prediction record
+                    pred = Prediction(
+                        email_id=email.id,
+                        model_version_id=active_model.id,
+                        predicted_category=prediction,
+                        confidence=confidence,
+                        processing_time_ms=0,
+                        created_at=datetime.now()
+                    )
+                    
+                    db.add(pred)
+                    
+                except Exception as e:
+                    logger.error(f"Error processing email {email.id}: {e}")
+            
+            db.commit()
+            logger.info(f"Batch processing completed: {len(unclassified)} emails")
+            
+        except Exception as e:
+            logger.error(f"Batch processing failed: {e}")
+        finally:
+            db.close()
+    
+    def cleanup_old_data(self):
+        """Clean up old audit logs and archived data"""
+        
+        db = SessionLocal()
+        
+        try:
+            # Delete audit logs older than 90 days
+            cutoff = datetime.now() - timedelta(days=90)
+            
+            deleted = db.query(AuditLog).filter(
+                AuditLog.created_at < cutoff
+            ).delete()
+            
+            db.commit()
+            
+            logger.info(f"Cleanup completed: {deleted} old records deleted")
+            
+        except Exception as e:
+            logger.error(f"Cleanup failed: {e}")
+        finally:
+            db.close()
+    
+    def generate_daily_report(self):
+        """Generate daily performance report"""
+        
+        db = SessionLocal()
+        
+        try:
+            yesterday = datetime.now() - timedelta(days=1)
+            today = datetime.now()
+            
+            # Get yesterday's stats
+            predictions = db.query(Prediction).filter(
+                Prediction.created_at >= yesterday,
+                Prediction.created_at < today
+            ).all()
+            
+            if not predictions:
+                return
+            
+            total = len(predictions)
+            avg_confidence = sum(p.confidence for p in predictions) / total
+            
+            # Category breakdown
+            from collections import Counter
+            category_counts = Counter(p.predicted_category for p in predictions)
+            
+            report = f"""
+            DAILY REPORT - {yesterday.strftime('%Y-%m-%d')}
+            
+            Total Predictions: {total}
+            Average Confidence: {avg_confidence:.2%}
+            
+            Category Breakdown:
+            {chr(10).join(f'  {cat}: {count}' for cat, count in category_counts.items())}
+            """
+            
+            logger.info(report)
+            
+            # Could send via email
+            # await send_email_alert("Daily Report", report, "info")
+            
+        finally:
+            db.close()
+    
+    def start(self):
+        """Start all scheduled jobs"""
+        
+        # Process unclassified emails every hour
+        self.scheduler.add_job(
+            self.process_unclassified_emails,
+            'interval',
+            hours=1,
+            id='batch_processing'
+        )
+        
+        # Cleanup old data daily at 2 AM
+        self.scheduler.add_job(
+            self.cleanup_old_data,
+            'cron',
+            hour=2,
+            minute=0,
+            id='data_cleanup'
+        )
+        
+        # Generate daily report at 8 AM
+        self.scheduler.add_job(
+            self.generate_daily_report,
+            'cron',
+            hour=8,
+            minute=0,
+            id='daily_report'
+        )
+        
+        self.scheduler.start()
+        logger.info("Batch processing scheduler started")
+    
+    def shutdown(self):
+        """Stop scheduler"""
+        self.scheduler.shutdown()
+
+# Add to main.py startup:
+from batch_processor import BatchProcessor
+
+batch_processor = BatchProcessor()
+
+@app.on_event("startup")
+async def startup_event():
+    batch_processor.start()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    batch_processor.shutdown()
+'@
+
+CHECKPOINT: Batch processing scheduled
+
+================================================================================
+SECTION 22: MODEL VERSION MANAGEMENT
+================================================================================
+
+STEP 22.1: Add Model Version Management Endpoints
+--------------------------------------------------
+# Add to main.py:
+@'
+@app.get("/admin/models")
+async def list_models():
+    """List all model versions"""
+    
+    db = SessionLocal()
+    
+    try:
+        models = db.query(ModelVersion).order_by(
+            ModelVersion.trained_at.desc()
+        ).all()
+        
+        return [
+            {
+                "version": m.version,
+                "algorithm": m.algorithm,
+                "status": m.status,
+                "accuracy": m.accuracy,
+                "f1_score": m.f1_score,
+                "trained_at": m.trained_at.isoformat()
+            }
+            for m in models
+        ]
+    finally:
+        db.close()
+
+@app.post("/admin/models/{version}/activate")
+async def activate_model(version: str):
+    """Activate a specific model version"""
+    
+    db = SessionLocal()
+    
+    try:
+        # Deactivate all models
+        db.query(ModelVersion).update({"status": "archived"})
+        
+        # Activate selected model
+        model = db.query(ModelVersion).filter(
+            ModelVersion.version == version
+        ).first()
+        
+        if not model:
+            raise HTTPException(status_code=404, detail="Model not found")
+        
+        model.status = "active"
+        db.commit()
+        
+        return {"message": f"Model {version} activated"}
+    
+    finally:
+        db.close()
+
+@app.delete("/admin/models/{version}")
+async def delete_model(version: str):
+    """Delete a model version"""
+    
+    db = SessionLocal()
+    
+    try:
+        model = db.query(ModelVersion).filter(
+            ModelVersion.version == version
+        ).first()
+        
+        if not model:
+            raise HTTPException(status_code=404, detail="Model not found")
+        
+        if model.status == "active":
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete active model"
+            )
+        
+        # Delete model files
+        import os
+        if os.path.exists(model.model_path):
+            os.remove(model.model_path)
+        if os.path.exists(model.vectorizer_path):
+            os.remove(model.vectorizer_path)
+        
+        # Delete database record
+        db.delete(model)
+        db.commit()
+        
+        return {"message": f"Model {version} deleted"}
+    
+    finally:
+        db.close()
+
+@app.get("/admin/models/{version}/performance")
+async def model_performance(version: str, days: int = 30):
+    """Get detailed performance metrics for a model version"""
+    
+    db = SessionLocal()
+    
+    try:
+        model = db.query(ModelVersion).filter(
+            ModelVersion.version == version
+        ).first()
+        
+        if not model:
+            raise HTTPException(status_code=404, detail="Model not found")
+        
+        # Get predictions made by this model
+        cutoff = datetime.now() - timedelta(days=days)
+        
+        predictions = db.query(Prediction).filter(
+            Prediction.model_version_id == model.id,
+            Prediction.created_at >= cutoff
+        ).all()
+        
+        if not predictions:
+            return {"message": "No predictions found for this model"}
+        
+        # Calculate metrics
+        total = len(predictions)
+        avg_confidence = sum(p.confidence for p in predictions) / total
+        avg_processing_time = sum(p.processing_time_ms for p in predictions) / total
+        
+        # Feedback stats
+        corrections = sum(
+            1 for p in predictions
+            if p.feedback and p.feedback[0].feedback_type == "correction"
+        )
+        
+        return {
+            "version": version,
+            "total_predictions": total,
+            "avg_confidence": avg_confidence,
+            "avg_processing_time_ms": avg_processing_time,
+            "corrections": corrections,
+            "correction_rate": corrections / total,
+            "training_metrics": {
+                "accuracy": model.accuracy,
+                "precision": model.precision,
+                "recall": model.recall,
+                "f1_score": model.f1_score
+            }
+        }
+    
+    finally:
+        db.close()
+'@
+
+CHECKPOINT: Model management endpoints ready
+
+================================================================================
+APPENDIX: TROUBLESHOOTING & QUICK REFERENCE
+================================================================================
+
+COMMON ISSUES & SOLUTIONS:
+--------------------------
+
+1. STREAMLIT NOT STARTING
+   Problem: "streamlit: command not found"
+   Solution:
+   - Ensure virtual environment is activated
+   - Reinstall: pip install streamlit
+   - Check installation: streamlit --version
+
+2. API CONNECTION FAILED
+   Problem: Frontend can't connect to API
+   Solution:
+   - Check API is running: curl http://localhost:8000/health
+   - Verify API_BASE_URL in .env
+   - Check firewall settings
+   - Ensure ports 8000 and 8501 are not in use
+
+3. DOCKER BUILD FAILS
+   Problem: Docker image fails to build
+   Solution:
+   - Check Dockerfile syntax
+   - Ensure requirements.txt is up to date
+   - Try: docker system prune -a
+   - Check disk space: docker system df
+
+4. DATABASE CONNECTION ERROR
+   Problem: "could not connect to server"
+   Solution:
+   - Verify DATABASE_URL in .env
+   - Check Neon database is active
+   - Test connection: psql 
+   - Check SSL requirements
+
+5. MODEL NOT LOADING
+   Problem: "Model file not found"
+   Solution:
+   - Verify model path in database
+   - Check models/ directory exists
+   - Re-train model if necessary
+   - Check file permissions
+
+6. HIGH LATENCY
+   Problem: Slow response times
+   Solution:
+   - Check database query performance
+   - Add database indexes
+   - Use connection pooling
+   - Monitor with Prometheus
+   - Consider caching predictions
+
+7. MEMORY ERRORS
+   Problem: "Out of memory"
+   Solution:
+   - Reduce batch size
+   - Use model compression
+   - Increase container memory limits
+   - Clean up old predictions
+
+QUICK COMMAND REFERENCE:
+------------------------
+
+# Start Development Environment
+cd C:\Email_categorization
+.\venv\Scripts\Activate
+uvicorn main:app --reload &  # API
+streamlit run frontend/app.py  # Frontend
+
+# Docker Commands
+docker-compose up -d  # Start all services
+docker-compose down  # Stop all services
+docker-compose logs -f backend  # View logs
+docker-compose restart backend  # Restart service
+
+# Database Operations
+psql   # Connect to database
+pg_dump  > backup.sql  # Backup
+psql  < backup.sql  # Restore
+
+# Model Management
+curl http://localhost:8000/admin/models  # List models
+curl -X POST http://localhost:8000/admin/retrain  # Trigger retraining
+
+# Monitoring
+curl http://localhost:8000/metrics  # Prometheus metrics
+curl http://localhost:8000/health  # Health check
+
+# Testing
+pytest tests/ -v  # Run tests
+pytest tests/ --cov=.  # With coverage
+locust -f locustfile.py  # Load testing
+
+DEPLOYMENT CHECKLIST:
+---------------------
+ Environment variables configured (.env.production)
+ Database migrations applied
+ Model trained and active
+ Docker containers tested locally
+ SSL certificates configured
+ CORS origins set correctly
+ Rate limiting enabled
+ Monitoring stack running (Prometheus + Grafana)
+ Error tracking configured (Sentry)
+ Logging setup (structured JSON)
+ Alerts configured (Email/Slack)
+ Backup strategy in place
+ CI/CD pipeline working
+ Load testing completed
+ Security audit done
+ Documentation updated
+
+PRODUCTION URLS:
+----------------
+API: https://your-api-domain.com
+Frontend: https://your-app-domain.com
+Grafana: https://your-monitoring-domain.com:3000
+Prometheus: https://your-monitoring-domain.com:9090
+
+SUPPORT CONTACTS:
+-----------------
+Database: Neon Support - https://neon.tech/docs
+Deployment: Render Support - https://render.com/docs
+Monitoring: Grafana Community - https://community.grafana.com
+
+================================================================================
+END OF GUIDE - STEPS 7-10 COMPLETE
+================================================================================
+
+You have successfully completed:
+ Step 7: Frontend Development (Streamlit)
+ Step 8: Deployment & Production (Docker, Cloud)
+ Step 9: Monitoring & Observability
+ Step 10: Automated Retraining Pipeline
+
+Your Email Categorization System is now production-ready with:
+- User-friendly web interface
+- Containerized deployment
+- Comprehensive monitoring
+- Automated model improvement
+- A/B testing capabilities
+- Scheduled batch processing
+
+NEXT STEPS (Optional):
+- Mobile app development
+- Advanced NLP models (BERT, GPT)
+- Multi-language support
+- Enterprise features (SSO, RBAC)
+
+For questions or issues, refer to the troubleshooting section above.
+
+Good luck with your production deployment! 

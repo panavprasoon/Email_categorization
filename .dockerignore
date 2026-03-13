@@ -1,0 +1,14 @@
+venv/
+.venv/
+__pycache__/
+.pytest_cache/
+.git/
+.gitignore
+.vscode/
+*.pyc
+*.pyo
+*.pyd
+*.db
+logs/
+exports/
+artifacts/reports/

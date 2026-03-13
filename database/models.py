@@ -26,6 +26,39 @@ class Email(Base):
     
     # Relationships
     predictions = relationship("Prediction", back_populates="email", cascade="all, delete-orphan")
+
+    @property
+    def sender(self) -> str:
+        """Best-effort sender extraction from structured email_text."""
+        if not self.email_text:
+            return ""
+
+        first_line = self.email_text.splitlines()[0] if self.email_text.splitlines() else ""
+        if first_line.startswith("Sender: "):
+            return first_line.replace("Sender: ", "", 1).strip()
+        return ""
+
+    @property
+    def subject(self) -> str:
+        """Best-effort subject extraction from structured email_text."""
+        if not self.email_text:
+            return ""
+
+        lines = self.email_text.splitlines()
+        if len(lines) > 1 and lines[1].startswith("Subject: "):
+            return lines[1].replace("Subject: ", "", 1).strip()
+        return ""
+
+    @property
+    def body(self) -> str:
+        """Best-effort body extraction from structured email_text."""
+        if not self.email_text:
+            return ""
+
+        parts = self.email_text.split("\n\n", 1)
+        if len(parts) == 2:
+            return parts[1].strip()
+        return self.email_text
     
     def __repr__(self):
         return f"<Email(id={self.id}, created_at={self.created_at})>"
@@ -81,6 +114,11 @@ class Prediction(Base):
     def confidence_score(self) -> float:
         """Alias for confidence to support legacy attribute names."""
         return self.confidence
+
+    @property
+    def probabilities(self) -> Dict[str, Any]:
+        """Alias for prediction_probabilities to support legacy attribute names."""
+        return self.prediction_probabilities or {}
 
     def __repr__(self):
         return f"<Prediction(id={self.id}, label={self.predicted_label}, confidence={self.confidence:.2f})>"

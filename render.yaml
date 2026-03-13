@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: email-system-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: ENVIRONMENT
+        value: production
+      - key: API_KEY_1
+        sync: false
+      - key: API_KEY_2
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+
+  - type: web
+    name: email-system-frontend
+    runtime: docker
+    dockerfilePath: ./Dockerfile.frontend
+    plan: free
+    envVars:
+      - key: API_BASE_URL
+        value: https://email-system-api.onrender.com
+      - key: API_KEY
+        sync: false
+      - key: API_TIMEOUT_SECONDS
+        value: 30

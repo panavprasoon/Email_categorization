@@ -44,10 +44,10 @@ class PredictionService:
         # Apply filters
         if filters:
             if filters.get("category"):
-                query = query.filter(Prediction.predicted_category == filters["category"])
+                query = query.filter(Prediction.predicted_label == filters["category"])
             
             if filters.get("min_confidence"):
-                query = query.filter(Prediction.confidence_score >= filters["min_confidence"])
+                query = query.filter(Prediction.confidence >= filters["min_confidence"])
             
             if filters.get("start_date"):
                 query = query.filter(Prediction.created_at >= filters["start_date"])
@@ -74,8 +74,8 @@ class PredictionService:
                     prediction_id=pred.id,
                     email_sender=pred.email.sender,
                     email_subject=pred.email.subject,
-                    predicted_category=pred.predicted_category,
-                    confidence=pred.confidence_score,
+                    predicted_category=pred.predicted_label,
+                    confidence=pred.confidence,
                     probabilities=pred.probabilities,
                     timestamp=pred.created_at,
                     feedback_provided=feedback_exists
@@ -113,8 +113,8 @@ class PredictionService:
             prediction_id=pred.id,
             email_sender=pred.email.sender,
             email_subject=pred.email.subject,
-            predicted_category=pred.predicted_category,
-            confidence=pred.confidence_score,
+            predicted_category=pred.predicted_label,
+            confidence=pred.confidence,
             probabilities=pred.probabilities,
             timestamp=pred.created_at,
             feedback_provided=feedback_exists
@@ -148,9 +148,9 @@ class PredictionService:
         total_confidence = 0
         
         for pred in predictions:
-            category = pred.predicted_category
+            category = pred.predicted_label
             category_counts[category] = category_counts.get(category, 0) + 1
-            total_confidence += pred.confidence_score
+            total_confidence += pred.confidence
         
         # Calculate average confidence
         avg_confidence = total_confidence / total_predictions if total_predictions > 0 else 0
@@ -163,9 +163,8 @@ class PredictionService:
         
         feedback_count = len(feedbacks)
         
-        # Calculate accuracy from feedback
-        correct_count = sum(1 for f in feedbacks if f.feedback_type == "correct")
-        accuracy = correct_count / feedback_count if feedback_count > 0 else None
+        # In the current schema, rows in feedback represent corrections.
+        accuracy = (1 - (feedback_count / total_predictions)) if total_predictions > 0 else None
         
         return StatisticsResponse(
             total_predictions=total_predictions,

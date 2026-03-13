@@ -117,13 +117,6 @@ class EmailFeatureExtractor:
         # Preprocess texts
         cleaned_texts = self.preprocessor.clean_batch(texts)
         
-        # Adjust max_df for very small datasets to avoid sklearn error:
-        # "max_df corresponds to < documents than min_df" when n_samples is 1.
-        if isinstance(self.max_df, float) and len(cleaned_texts) < 2:
-            # With a single document, float max_df becomes < 1 after scaling, which
-            # may be less than min_df=1 and triggers an error.
-            self.vectorizer.max_df = 1.0
-
         # Fit vectorizer
         try:
             self.vectorizer.fit(cleaned_texts)
