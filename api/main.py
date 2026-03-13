@@ -21,6 +21,12 @@ from api.middleware.logging import RequestLoggingMiddleware
 from api.middleware.error_handler import ErrorHandlerMiddleware
 from api.routes import health, categorization, predictions, feedback, models
 
+# Ensure log directory exists when file logging is configured
+if settings.LOG_FILE:
+    log_dir = os.path.dirname(settings.LOG_FILE)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+
 # Configure logging
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL),
