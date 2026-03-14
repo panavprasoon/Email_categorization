@@ -15,6 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from database.models import Feedback, Prediction
 from api.models import FeedbackRequest, FeedbackResponse
 from api.exceptions import ResourceNotFoundError
+from api.monitoring import feedback_counter
 
 
 class FeedbackService:
@@ -79,7 +80,10 @@ class FeedbackService:
         self.db.add(feedback)
         self.db.commit()
         self.db.refresh(feedback)
-        
+
+        # Track metric
+        feedback_counter.labels(feedback_type=request.feedback_type.value).inc()
+
         return FeedbackResponse(
             feedback_id=feedback.id,
             prediction_id=feedback.prediction_id,

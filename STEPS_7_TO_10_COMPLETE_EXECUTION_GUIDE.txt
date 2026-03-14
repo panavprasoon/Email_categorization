@@ -210,18 +210,36 @@ How to execute:
 
 STEP A2: CREATE API SERVICE
 How to execute:
-1) Login to Render dashboard
-2) New > Web Service
-3) Connect GitHub repo
-4) Runtime: Docker
-5) Dockerfile path: ./Dockerfile.api
-6) Add env vars:
-    - DATABASE_URL
-    - SECRET_KEY
-    - API_KEY_1
-    - API_KEY_2
+1) Open https://dashboard.render.com and sign in.
+2) Click New > Web Service.
+3) If asked, connect GitHub and authorize Render for your repository.
+4) Select your repository (Email_categorization).
+5) In service settings, set:
+    - Name: email-categorization-api (or any unique name)
+    - Region: closest to your users
+    - Branch: master
+    - Runtime: Docker
+6) In Docker settings, set Dockerfile Path to:
+    ./Dockerfile.api
+     - Start Command: leave empty (Render uses CMD from Dockerfile.api)
+     - If Render forces input, use:
+         uvicorn api.main:app --host 0.0.0.0 --port 8000
+7) In Instance Type, choose Free/Starter (as per your account plan).
+8) Open Environment tab and add these variables one by one:
+    - DATABASE_URL=<your Neon postgres URL>
+    - SECRET_KEY=<same value from local .env>
+    - API_KEY_1=<primary API key>
+    - API_KEY_2=<secondary API key>
     - ENVIRONMENT=production
-7) Deploy
+9) Click Create Web Service (or Deploy Web Service).
+10) Wait for build to finish (status becomes Live).
+11) Open Logs and confirm startup shows Uvicorn running without crash loop.
+12) Open the generated URL and test:
+    <api-url>/health/
+13) If /health/ fails:
+    - Recheck DATABASE_URL format and credentials
+    - Confirm all env vars are saved (no blank values)
+    - Trigger Manual Deploy > Clear build cache & deploy
 
 Expected result:
 - API service URL available and /health/ reachable

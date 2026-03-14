@@ -1,0 +1,7 @@
+id,version,accuracy,precision_score,recall_score,f1_score,is_active,model_path,vectorizer_path,training_samples,training_metrics,deployed_at,created_at
+1,v0.0.0-placeholder,0.0,0.0,0.0,0.0,False,,,0,,,2026-03-01 13:13:19.103254
+4,20260307_174945,1.0,1.0,1.0,1.0,False,artifacts\models\model_v20260307_174945.pkl,artifacts\vectorizers\vectorizer_v20260307_174945.pkl,0,{},,2026-03-07 12:19:49.348403
+5,20260307_175103,1.0,1.0,1.0,1.0,False,artifacts\models\model_v20260307_175103.pkl,artifacts\vectorizers\vectorizer_v20260307_175103.pkl,0,{},,2026-03-07 12:21:07.977881
+6,test,1.0,1.0,1.0,1.0,False,artifacts\models\model_vtest.pkl,artifacts\vectorizers\vectorizer_vtest.pkl,0,{},,2026-03-07 12:31:44.564077
+10,test_inference,0.9,,,0.89,False,C:\Users\hp\AppData\Local\Temp\test_model_inference.pkl,C:\Users\hp\AppData\Local\Temp\test_model_inference.pkl,0,{},,2026-03-07 16:25:12.839663
+9,v1.0.0-test,0.85,0.83,0.87,0.85,True,/models/v1.0.0.pkl,/models/v1.0.0_vectorizer.pkl,1000,"{'confusion_matrix': [[50, 10], [5, 35]]}",2026-03-07 21:56:35.513351,2026-03-07 16:22:02.545608

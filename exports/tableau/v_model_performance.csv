@@ -1,0 +1,7 @@
+version,accuracy,f1_score,is_active,total_predictions,total_corrections,correction_rate_percent
+test_inference,0.9,0.89,False,0,0,0.0
+v1.0.0-test,0.85,0.85,True,127,29,22.83
+test,1.0,1.0,False,20,0,0.0
+20260307_175103,1.0,1.0,False,0,0,0.0
+20260307_174945,1.0,1.0,False,0,0,0.0
+v0.0.0-placeholder,0.0,0.0,False,0,0,0.0

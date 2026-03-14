@@ -10,9 +10,27 @@ st.set_page_config(
 )
 
 st.title("📧 Email Categorization System")
-st.caption("Unified frontend: classify emails, track analytics, and manage model operations.")
+st.caption("Classify emails, review analytics, and manage model operations from one place.")
 
-health = api_client.health()
+st.markdown(
+    """
+### Welcome
+This system categorizes incoming emails using your deployed ML model.
+
+**Features**
+- Email classification with confidence scores
+- Feedback submission for continuous improvement
+- Analytics dashboard for activity and quality tracking
+- Admin panel for model visibility and operations
+"""
+)
+
+@st.cache_data(ttl=30)
+def get_health() -> dict:
+    return api_client.health()
+
+
+health = get_health()
 
 col1, col2, col3 = st.columns(3)
 if "error" in health:
@@ -33,16 +51,49 @@ else:
     st.success("Backend reachable. Use the sidebar pages to continue.")
 
 st.markdown("---")
+st.markdown("### Navigation Guide")
+
+left, middle, right = st.columns(3)
+
+with left:
+    st.markdown(
+        """
+#### 📩 Email Classifier
+- Enter sender, subject, and body
+- Run prediction instantly
+- Review confidence and probabilities
+- Submit feedback
+"""
+    )
+
+with middle:
+    st.markdown(
+        """
+#### 📊 Analytics
+- Track total predictions
+- Monitor average confidence
+- View category distribution
+- Inspect recent predictions
+"""
+    )
+
+with right:
+    st.markdown(
+        """
+#### 🛠️ Admin Panel
+- View model metadata
+- Check live health status
+- Reload active model
+- Review runtime configuration
+"""
+    )
+
+st.markdown("---")
 st.markdown(
     """
-### Pages
-- `1_Email_Classifier`: submit emails and feedback
-- `2_Analytics`: live metrics from API + prediction timeline
-- `3_Admin_Panel`: model info and reload action
-
-### Required manual UI steps
-1. Ensure API is running locally or deployed.
-2. Set `API_BASE_URL` and `API_KEY` in `.env`.
-3. Run frontend: `streamlit run frontend/app.py`.
-"""
+<div style='text-align: center; color: #666; padding: 0.5rem;'>
+    Email Categorization System | Streamlit + FastAPI
+</div>
+""",
+    unsafe_allow_html=True,
 )

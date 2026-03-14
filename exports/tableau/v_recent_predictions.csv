@@ -1,0 +1,517 @@
+id,created_at,email_text,predicted_label,confidence,model_version,corrected_label,feedback_status
+154,2026-03-11 17:18:02.460841,"Sender: ops@company.com
+Subject: Client escalation
+
+A client issue needs immediate investigation. Share the root cause analysis by afternoon.",Personal,0.25,v1.0.0-test,,not_corrected
+153,2026-03-11 17:18:01.499101,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,,not_corrected
+152,2026-03-11 17:18:00.445392,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+151,2026-03-11 17:17:59.415433,"Sender: crypto@fastprofit.co
+Subject: Guaranteed returns today
+
+Double your money instantly with this secret trading trick. Limited offer for selected users only.",Promotions,0.52,v1.0.0-test,,not_corrected
+150,2026-03-11 17:17:58.412476,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,,not_corrected
+149,2026-03-11 17:17:57.399248,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,,not_corrected
+148,2026-03-11 17:17:56.329778,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,,not_corrected
+147,2026-03-11 17:17:55.363939,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+146,2026-03-11 17:17:54.350272,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+145,2026-03-11 17:17:53.358092,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,,not_corrected
+144,2026-03-11 17:17:52.436767,"Sender: cousin@yahoo.com
+Subject: Family trip plans
+
+We are finalizing the family trip itinerary. Please confirm your travel dates.",Personal,0.42,v1.0.0-test,,not_corrected
+143,2026-03-11 17:17:51.425320,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,,not_corrected
+142,2026-03-11 17:17:50.466878,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,,not_corrected
+141,2026-03-11 17:17:49.537373,"Sender: hr@company.com
+Subject: Project deadline update
+
+The project timeline has shifted. Please send the revised status report before end of day.",Work,0.57,v1.0.0-test,,not_corrected
+140,2026-03-11 17:17:48.601033,"Sender: newsletter@techdaily.com
+Subject: Weekly product roundup
+
+Here is your weekly digest covering product launches, AI trends, and startup funding news.",Newsletter,0.66,v1.0.0-test,,not_corrected
+139,2026-03-11 17:17:47.637977,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,,not_corrected
+138,2026-03-11 17:17:46.666960,"Sender: hr@company.com
+Subject: Project deadline update
+
+The project timeline has shifted. Please send the revised status report before end of day.",Work,0.57,v1.0.0-test,,not_corrected
+137,2026-03-11 17:17:45.714539,"Sender: cousin@yahoo.com
+Subject: Family trip plans
+
+We are finalizing the family trip itinerary. Please confirm your travel dates.",Personal,0.42,v1.0.0-test,,not_corrected
+136,2026-03-11 17:17:44.771412,"Sender: cousin@yahoo.com
+Subject: Family trip plans
+
+We are finalizing the family trip itinerary. Please confirm your travel dates.",Personal,0.42,v1.0.0-test,,not_corrected
+135,2026-03-11 17:17:43.838815,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,,not_corrected
+134,2026-03-11 17:17:40.687579,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+133,2026-03-11 17:17:39.735617,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,,not_corrected
+132,2026-03-11 17:17:38.790764,"Sender: offers@brandstore.com
+Subject: Flash sale ends tonight
+
+Exclusive limited-time promotion on premium products. Shop before midnight.",Promotions,0.82,v1.0.0-test,,not_corrected
+131,2026-03-11 17:17:37.839378,"Sender: neighbor@mail.com
+Subject: Need a small favor
+
+Could you collect my package tomorrow if it arrives before I get home?",Personal,0.25,v1.0.0-test,,not_corrected
+130,2026-03-11 17:17:36.914183,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+129,2026-03-11 17:17:35.920911,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+128,2026-03-11 17:17:34.946962,"Sender: newsletter@techdaily.com
+Subject: Weekly product roundup
+
+Here is your weekly digest covering product launches, AI trends, and startup funding news.",Newsletter,0.66,v1.0.0-test,,not_corrected
+127,2026-03-11 17:17:34.021860,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,,not_corrected
+126,2026-03-11 17:17:33.014786,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,,not_corrected
+125,2026-03-11 17:17:32.013208,"Sender: lottery@jackpot.xyz
+Subject: Urgent prize notification
+
+Your account has been selected for a grand prize. Submit bank details immediately.",Personal,0.25,v1.0.0-test,,not_corrected
+124,2026-03-11 17:17:31.091910,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+123,2026-03-11 17:17:30.172445,"Sender: cousin@yahoo.com
+Subject: Family trip plans
+
+We are finalizing the family trip itinerary. Please confirm your travel dates.",Personal,0.42,v1.0.0-test,,not_corrected
+122,2026-03-11 17:17:29.208425,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,,not_corrected
+121,2026-03-11 17:17:28.268780,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,,not_corrected
+120,2026-03-11 17:17:27.344844,"Sender: offers@brandstore.com
+Subject: Flash sale ends tonight
+
+Exclusive limited-time promotion on premium products. Shop before midnight.",Promotions,0.82,v1.0.0-test,,not_corrected
+119,2026-03-11 17:17:26.326305,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,,not_corrected
+118,2026-03-11 17:17:25.363486,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+117,2026-03-11 17:17:24.375029,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+116,2026-03-11 17:17:23.384804,"Sender: crypto@fastprofit.co
+Subject: Guaranteed returns today
+
+Double your money instantly with this secret trading trick. Limited offer for selected users only.",Promotions,0.52,v1.0.0-test,,not_corrected
+115,2026-03-11 17:17:22.471173,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,,not_corrected
+114,2026-03-11 17:17:19.362856,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+113,2026-03-11 17:17:18.431397,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+112,2026-03-11 17:17:17.516200,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,,not_corrected
+111,2026-03-11 17:17:16.564721,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,,not_corrected
+110,2026-03-11 17:17:15.633470,"Sender: offers@brandstore.com
+Subject: Flash sale ends tonight
+
+Exclusive limited-time promotion on premium products. Shop before midnight.",Promotions,0.82,v1.0.0-test,,not_corrected
+109,2026-03-11 17:17:14.698632,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,,not_corrected
+108,2026-03-11 17:17:13.751351,"Sender: lottery@jackpot.xyz
+Subject: Urgent prize notification
+
+Your account has been selected for a grand prize. Submit bank details immediately.",Personal,0.25,v1.0.0-test,,not_corrected
+107,2026-03-11 17:17:12.839036,"Sender: ops@company.com
+Subject: Client escalation
+
+A client issue needs immediate investigation. Share the root cause analysis by afternoon.",Personal,0.25,v1.0.0-test,,not_corrected
+106,2026-03-11 17:17:11.899353,"Sender: neighbor@mail.com
+Subject: Need a small favor
+
+Could you collect my package tomorrow if it arrives before I get home?",Personal,0.25,v1.0.0-test,,not_corrected
+105,2026-03-11 17:17:10.983163,"Sender: ops@company.com
+Subject: Client escalation
+
+A client issue needs immediate investigation. Share the root cause analysis by afternoon.",Personal,0.25,v1.0.0-test,,not_corrected
+104,2026-03-11 17:17:10.033702,"Sender: ops@company.com
+Subject: Client escalation
+
+A client issue needs immediate investigation. Share the root cause analysis by afternoon.",Personal,0.25,v1.0.0-test,,not_corrected
+103,2026-03-11 17:17:09.067123,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+102,2026-03-11 17:17:08.084940,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+101,2026-03-11 17:17:07.107855,"Sender: lottery@jackpot.xyz
+Subject: Urgent prize notification
+
+Your account has been selected for a grand prize. Submit bank details immediately.",Personal,0.25,v1.0.0-test,,not_corrected
+100,2026-03-11 17:17:06.119493,"Sender: cousin@yahoo.com
+Subject: Family trip plans
+
+We are finalizing the family trip itinerary. Please confirm your travel dates.",Personal,0.42,v1.0.0-test,,not_corrected
+99,2026-03-11 17:17:05.109038,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,,not_corrected
+98,2026-03-11 17:17:04.135789,"Sender: offers@brandstore.com
+Subject: Flash sale ends tonight
+
+Exclusive limited-time promotion on premium products. Shop before midnight.",Promotions,0.82,v1.0.0-test,,not_corrected
+97,2026-03-11 17:17:03.162213,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,,not_corrected
+96,2026-03-11 17:17:02.120345,"Sender: hr@company.com
+Subject: Project deadline update
+
+The project timeline has shifted. Please send the revised status report before end of day.",Work,0.57,v1.0.0-test,,not_corrected
+95,2026-03-11 17:17:01.161361,"Sender: cousin@yahoo.com
+Subject: Family trip plans
+
+We are finalizing the family trip itinerary. Please confirm your travel dates.",Personal,0.42,v1.0.0-test,,not_corrected
+94,2026-03-11 17:16:58.022265,"Sender: crypto@fastprofit.co
+Subject: Guaranteed returns today
+
+Double your money instantly with this secret trading trick. Limited offer for selected users only.",Promotions,0.52,v1.0.0-test,,not_corrected
+93,2026-03-11 17:16:57.035379,"Sender: lottery@jackpot.xyz
+Subject: Urgent prize notification
+
+Your account has been selected for a grand prize. Submit bank details immediately.",Personal,0.25,v1.0.0-test,,not_corrected
+92,2026-03-11 17:16:56.090943,"Sender: newsletter@techdaily.com
+Subject: Weekly product roundup
+
+Here is your weekly digest covering product launches, AI trends, and startup funding news.",Newsletter,0.66,v1.0.0-test,,not_corrected
+91,2026-03-11 17:16:55.111280,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,,not_corrected
+90,2026-03-11 17:16:53.315251,"Sender: hr@company.com
+Subject: Project deadline update
+
+The project timeline has shifted. Please send the revised status report before end of day.",Work,0.57,v1.0.0-test,Personal,corrected
+89,2026-03-11 17:16:51.502421,"Sender: ops@company.com
+Subject: Client escalation
+
+A client issue needs immediate investigation. Share the root cause analysis by afternoon.",Personal,0.25,v1.0.0-test,Work,corrected
+88,2026-03-11 17:16:50.462209,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+87,2026-03-11 17:16:48.586041,"Sender: neighbor@mail.com
+Subject: Need a small favor
+
+Could you collect my package tomorrow if it arrives before I get home?",Personal,0.25,v1.0.0-test,Work,corrected
+86,2026-03-11 17:16:46.674092,"Sender: crypto@fastprofit.co
+Subject: Guaranteed returns today
+
+Double your money instantly with this secret trading trick. Limited offer for selected users only.",Promotions,0.52,v1.0.0-test,Spam,corrected
+85,2026-03-11 17:16:45.480120,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+84,2026-03-11 17:16:43.639624,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,Work,corrected
+83,2026-03-11 17:16:42.551877,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,,not_corrected
+82,2026-03-11 17:16:41.480885,"Sender: cousin@yahoo.com
+Subject: Family trip plans
+
+We are finalizing the family trip itinerary. Please confirm your travel dates.",Personal,0.42,v1.0.0-test,,not_corrected
+81,2026-03-11 17:16:40.447298,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,,not_corrected
+80,2026-03-11 17:16:39.402826,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+79,2026-03-11 17:16:38.042753,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+78,2026-03-11 17:16:35.681004,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,Promotions,corrected
+77,2026-03-11 17:16:33.349422,"Sender: hr@company.com
+Subject: Project deadline update
+
+The project timeline has shifted. Please send the revised status report before end of day.",Work,0.57,v1.0.0-test,Personal,corrected
+76,2026-03-11 17:16:31.446939,"Sender: rewards@marketplace.com
+Subject: Special member discount
+
+As a valued member, you get an extra discount on your next purchase.",Personal,0.25,v1.0.0-test,Promotions,corrected
+75,2026-03-11 17:16:30.388894,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+74,2026-03-11 17:16:27.002013,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+73,2026-03-11 17:16:26.052500,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,,not_corrected
+72,2026-03-11 17:16:25.092607,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+71,2026-03-11 17:16:23.321194,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,Work,corrected
+70,2026-03-11 17:16:22.332187,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,,not_corrected
+69,2026-03-11 17:16:20.347851,"Sender: lottery@jackpot.xyz
+Subject: Urgent prize notification
+
+Your account has been selected for a grand prize. Submit bank details immediately.",Personal,0.25,v1.0.0-test,Spam,corrected
+68,2026-03-11 17:16:18.334901,"Sender: ops@company.com
+Subject: Client escalation
+
+A client issue needs immediate investigation. Share the root cause analysis by afternoon.",Personal,0.25,v1.0.0-test,Work,corrected
+67,2026-03-11 17:16:16.461102,"Sender: lottery@jackpot.xyz
+Subject: Urgent prize notification
+
+Your account has been selected for a grand prize. Submit bank details immediately.",Personal,0.25,v1.0.0-test,Spam,corrected
+66,2026-03-11 17:16:15.433044,"Sender: hr@company.com
+Subject: Project deadline update
+
+The project timeline has shifted. Please send the revised status report before end of day.",Work,0.57,v1.0.0-test,,not_corrected
+65,2026-03-11 17:16:14.385525,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,,not_corrected
+64,2026-03-11 17:16:12.424898,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,Work,corrected
+63,2026-03-11 17:16:10.659138,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,Work,corrected
+62,2026-03-11 17:16:09.633632,"Sender: hr@company.com
+Subject: Project deadline update
+
+The project timeline has shifted. Please send the revised status report before end of day.",Work,0.57,v1.0.0-test,,not_corrected
+61,2026-03-11 17:16:08.555454,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+60,2026-03-11 17:16:07.637193,"Sender: hr@company.com
+Subject: Project deadline update
+
+The project timeline has shifted. Please send the revised status report before end of day.",Work,0.57,v1.0.0-test,,not_corrected
+59,2026-03-11 17:16:05.875736,"Sender: offers@brandstore.com
+Subject: Flash sale ends tonight
+
+Exclusive limited-time promotion on premium products. Shop before midnight.",Promotions,0.82,v1.0.0-test,Work,corrected
+58,2026-03-11 17:16:04.912494,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+57,2026-03-11 17:16:03.895578,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+56,2026-03-11 17:16:02.922325,"Sender: newsletter@techdaily.com
+Subject: Weekly product roundup
+
+Here is your weekly digest covering product launches, AI trends, and startup funding news.",Newsletter,0.66,v1.0.0-test,,not_corrected
+55,2026-03-11 17:16:00.910187,"Sender: crypto@fastprofit.co
+Subject: Guaranteed returns today
+
+Double your money instantly with this secret trading trick. Limited offer for selected users only.",Promotions,0.52,v1.0.0-test,Spam,corrected
+54,2026-03-11 17:15:57.589893,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+53,2026-03-11 17:15:56.266277,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+52,2026-03-11 17:15:55.085734,"Sender: deals@shopnow.com
+Subject: 50% off this week
+
+Huge sale on all electronics this week only. Use code SAVE50 at checkout.",Promotions,0.67,v1.0.0-test,,not_corrected
+51,2026-03-11 17:15:53.206462,"Sender: neighbor@mail.com
+Subject: Need a small favor
+
+Could you collect my package tomorrow if it arrives before I get home?",Personal,0.25,v1.0.0-test,Work,corrected
+50,2026-03-11 17:15:51.276850,"Sender: neighbor@mail.com
+Subject: Need a small favor
+
+Could you collect my package tomorrow if it arrives before I get home?",Personal,0.25,v1.0.0-test,Work,corrected
+49,2026-03-11 17:15:50.194138,"Sender: neighbor@mail.com
+Subject: Need a small favor
+
+Could you collect my package tomorrow if it arrives before I get home?",Personal,0.25,v1.0.0-test,,not_corrected
+48,2026-03-11 17:15:49.202709,"Sender: friend@gmail.com
+Subject: Dinner this weekend?
+
+Hey, are you free for dinner on Saturday evening? Let me know what time works for you.",Personal,0.37,v1.0.0-test,,not_corrected
+47,2026-03-11 17:15:48.068807,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+46,2026-03-11 17:15:47.087616,"Sender: neighbor@mail.com
+Subject: Need a small favor
+
+Could you collect my package tomorrow if it arrives before I get home?",Personal,0.25,v1.0.0-test,,not_corrected
+45,2026-03-11 17:15:45.160110,"Sender: ops@company.com
+Subject: Client escalation
+
+A client issue needs immediate investigation. Share the root cause analysis by afternoon.",Personal,0.25,v1.0.0-test,Work,corrected
+44,2026-03-11 17:15:43.933041,"Sender: updates@insights.org
+Subject: Monthly industry digest
+
+This month's newsletter covers market analysis, policy updates, and expert commentary.",Newsletter,0.79,v1.0.0-test,,not_corrected
+43,2026-03-11 17:15:42.018408,"Sender: lottery@jackpot.xyz
+Subject: Urgent prize notification
+
+Your account has been selected for a grand prize. Submit bank details immediately.",Personal,0.25,v1.0.0-test,Spam,corrected
+42,2026-03-11 17:15:40.118985,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,Personal,corrected
+41,2026-03-11 17:15:38.098978,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,Personal,corrected
+40,2026-03-11 17:15:37.007943,"Sender: briefing@mediahub.net
+Subject: Daily briefing
+
+Top stories and curated reads for today, including tech, business, and culture highlights.",Newsletter,0.53,v1.0.0-test,,not_corrected
+39,2026-03-11 17:15:35.112847,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,Work,corrected
+38,2026-03-11 17:15:33.059429,"Sender: neighbor@mail.com
+Subject: Need a small favor
+
+Could you collect my package tomorrow if it arrives before I get home?",Personal,0.25,v1.0.0-test,Work,corrected
+37,2026-03-11 17:15:31.926448,"Sender: winner@claim-now.biz
+Subject: You won $1,000,000
+
+Congratulations! Click here right now to claim your cash prize before it expires.",Spam,0.7,v1.0.0-test,,not_corrected
+36,2026-03-11 17:15:30.793623,"Sender: manager@company.com
+Subject: Quarterly KPI review
+
+Please review the quarterly KPI dashboard and join the leadership meeting tomorrow at 10 AM.",Work,0.59,v1.0.0-test,,not_corrected
+35,2026-03-11 17:15:28.610728,"Sender: newsletter@techdaily.com
+Subject: Weekly product roundup
+
+Here is your weekly digest covering product launches, AI trends, and startup funding news.",Newsletter,0.66,v1.0.0-test,Work,corrected
+34,2026-03-11 17:11:01.979650,"Sender: step6@example.com
+Subject: Operational dashboard
+
+This should update analytics tables for the Power BI dashboard readiness check.",Personal,0.25,v1.0.0-test,Personal,corrected
+33,2026-03-11 17:08:57.382213,"Sender: step6@example.com
+Subject: Quarterly review meeting
+
+Please review the attached KPI summary and join the meeting tomorrow.",Work,0.54,v1.0.0-test,,not_corrected
+32,2026-03-07 16:26:36.793245,This is a test email about a work meeting tomorrow.,Work,0.87,v1.0.0-test,Personal,corrected
+31,2026-03-07 16:24:29.699050,This is a test email about a work meeting tomorrow.,Work,0.87,v1.0.0-test,Personal,corrected
+30,2026-03-07 16:22:48.421425,Test body,meeting,0.89,v1.0.0-test,,not_corrected
+29,2026-03-07 16:22:47.617857,Test body,meeting,0.89,v1.0.0-test,,not_corrected
+28,2026-03-07 16:22:03.582498,This is a test email about a work meeting tomorrow.,Work,0.87,v1.0.0-test,Personal,corrected
+27,2026-03-07 16:22:00.916118,Server down need help,reminder,0.30719859785858633,test,,not_corrected
+26,2026-03-07 16:21:08.790768,Server down need help,reminder,0.30719859785858633,test,,not_corrected
+25,2026-03-07 16:20:28.576817,Server down need help,reminder,0.30719859785858633,test,,not_corrected
+24,2026-03-07 16:20:20.528023,Server down need help,reminder,0.30719859785858633,test,,not_corrected
+23,2026-03-07 16:19:46.438643,Server down need help,reminder,0.30719859785858633,test,,not_corrected
+22,2026-03-07 16:18:55.929542,Server down need help,reminder,0.30719859785858633,test,,not_corrected
+21,2026-03-07 14:23:10.811790,"Subject: Project Status Update - Q1 2024
+Team, please review the attached quarterly report. Sales increased 20% and customer satisfaction is up.",report,0.4213729665422218,test,,not_corrected
+20,2026-03-07 14:22:32.348901,"Subject: Project Status Update - Q1 2024
+Team, please review the attached quarterly report. Sales increased 20% and customer satisfaction is up.",report,0.4213729665422218,test,,not_corrected
+19,2026-03-07 14:21:50.011837,"Subject: Project Status Update - Q1 2024
+Team, please review the attached quarterly report. Sales increased 20% and customer satisfaction is up.",report,0.4213729665422218,test,,not_corrected
+13,2026-03-07 13:57:57.760072,Test body,meeting,0.89,test,,not_corrected
+12,2026-03-07 13:57:56.894559,Test body,meeting,0.89,test,,not_corrected
+11,2026-03-07 13:56:01.795162,Test body,meeting,0.89,test,,not_corrected
+10,2026-03-07 13:56:00.865796,Test body,meeting,0.89,test,,not_corrected
+9,2026-03-07 13:55:16.439957,Test body,meeting,0.89,test,,not_corrected
+8,2026-03-07 13:55:15.556285,Test body,meeting,0.89,test,,not_corrected
+7,2026-03-07 13:53:50.486329,Test body,meeting,0.89,test,,not_corrected
+6,2026-03-07 13:53:49.594520,Test body,meeting,0.89,test,,not_corrected
+5,2026-03-07 13:50:25.236578,Test body,meeting,0.89,test,,not_corrected
+4,2026-03-07 13:50:24.595002,Test body,meeting,0.89,test,,not_corrected
+3,2026-03-07 13:42:40.030961,Server down need help,reminder,0.30719859785858633,test,,not_corrected

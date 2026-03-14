@@ -20,6 +20,30 @@ from api.config import settings
 from api.middleware.logging import RequestLoggingMiddleware
 from api.middleware.error_handler import ErrorHandlerMiddleware
 from api.routes import health, categorization, predictions, feedback, models
+from api.routes import admin as admin_routes
+from api.monitoring import metrics_endpoint
+
+# Sentry integration (optional — only initialised when SENTRY_DSN is set)
+_sentry_dsn = os.getenv("SENTRY_DSN")
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+            traces_sample_rate=0.1,
+            environment=settings.ENVIRONMENT,
+            release=settings.APP_VERSION,
+        )
+        logging.getLogger(__name__).info("Sentry error tracking initialised")
+    except ImportError:
+        logging.getLogger(__name__).warning(
+            "sentry-sdk not installed — error tracking disabled. "
+            "Install with: pip install sentry-sdk[fastapi]"
+        )
 
 # Ensure log directory exists when file logging is configured
 if settings.LOG_FILE:
@@ -69,6 +93,10 @@ app.include_router(categorization.router)
 app.include_router(predictions.router)
 app.include_router(feedback.router)
 app.include_router(models.router)
+app.include_router(admin_routes.router)
+
+# Prometheus /metrics endpoint (unauthenticated — restrict at network level)
+app.add_api_route("/metrics", metrics_endpoint, include_in_schema=False)
 
 # Root endpoint
 @app.get("/")
@@ -96,6 +124,14 @@ async def startup_event():
     logger.info(f"Debug mode: {settings.DEBUG}")
     logger.info("API server is ready to accept requests")
 
+    # Start background batch processor
+    try:
+        from api.batch_processor import BatchProcessor
+        app.state.batch_processor = BatchProcessor()
+        app.state.batch_processor.start()
+    except Exception as exc:
+        logger.warning("Batch processor failed to start: %s", exc)
+
 
 # Shutdown event
 @app.on_event("shutdown")
@@ -104,6 +140,14 @@ async def shutdown_event():
     Execute on application shutdown
     """
     logger.info("Shutting down API server")
+
+    # Stop batch processor
+    processor = getattr(app.state, "batch_processor", None)
+    if processor:
+        try:
+            processor.shutdown()
+        except Exception as exc:
+            logger.warning("Error stopping batch processor: %s", exc)
 
 
 if __name__ == "__main__":

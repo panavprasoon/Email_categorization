@@ -10,6 +10,7 @@ from datetime import datetime
 import time
 import sys
 import os
+import logging
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -17,6 +18,9 @@ from inference.categorizer import EmailCategorizer
 from database.models import Email, Prediction, ModelVersion
 from database.repository import InferenceMetadataRepository, ModelVersionRepository
 from api.models import EmailCategorizationRequest, EmailCategorizationResponse
+from api.monitoring import prediction_counter, model_confidence, batch_prediction_counter
+
+logger = logging.getLogger(__name__)
 
 
 class CategorizationService:
@@ -104,6 +108,10 @@ class CategorizationService:
             self.db.commit()
             self.db.refresh(pred_record)
 
+            # Track Prometheus metrics
+            prediction_counter.labels(category=prediction["category"]).inc()
+            model_confidence.observe(prediction["confidence"])
+
             return EmailCategorizationResponse(
                 prediction_id=pred_record.id,
                 category=prediction["category"],
@@ -142,8 +150,9 @@ class CategorizationService:
                 )
                 results.append(result)
             except Exception as e:
-                # Log error but continue processing
-                print(f"Error processing email: {str(e)}")
+                logger.error("Error processing email in batch: %s", e)
                 continue
+            finally:
+                batch_prediction_counter.inc()
         
         return results

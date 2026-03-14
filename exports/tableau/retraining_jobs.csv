@@ -1,0 +1,1 @@
+id,trigger_reason,start_time,end_time,status,new_model_version,training_samples,validation_accuracy,promoted,error_log,created_at

@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -10,7 +11,15 @@ from utils.helpers import category_pie, format_pct, predictions_timeline
 st.set_page_config(page_title="Analytics", page_icon="📊", layout="wide")
 st.title("📊 Analytics")
 
-days = st.slider("Time window (days)", min_value=1, max_value=90, value=7)
+top_left, top_mid, top_right = st.columns([2, 1, 1])
+
+with top_left:
+    days = st.slider("Time window (days)", min_value=1, max_value=90, value=7)
+with top_mid:
+    st.metric("Selected Period", f"{days} days")
+with top_right:
+    if st.button("Refresh Data"):
+        st.rerun()
 
 stats = api_client.stats(days=days)
 if "error" in stats:
@@ -65,3 +74,19 @@ if rows:
     st.dataframe(table_rows, use_container_width=True, hide_index=True)
 else:
     st.info("No recent predictions to display.")
+
+st.markdown("---")
+if st.button("Download Analytics Report (CSV)"):
+    report_rows = [
+        {"metric": "total_predictions", "value": stats.get("total_predictions", 0)},
+        {"metric": "average_confidence", "value": stats.get("average_confidence", 0.0)},
+        {"metric": "feedback_count", "value": stats.get("feedback_count", 0)},
+        {"metric": "accuracy_from_feedback", "value": stats.get("accuracy_from_feedback")},
+    ]
+    report_df = pd.DataFrame(report_rows)
+    st.download_button(
+        label="Download CSV",
+        data=report_df.to_csv(index=False),
+        file_name=f"analytics_report_{pd.Timestamp.utcnow().strftime('%Y%m%d')}.csv",
+        mime="text/csv",
+    )
