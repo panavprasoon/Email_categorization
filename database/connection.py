@@ -17,20 +17,32 @@ from config import Config
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create database engine with connection pooling for Neon
-engine = create_engine(
-    Config.get_database_url(),
-    poolclass=QueuePool,
-    pool_size=Config.DB_POOL_SIZE,
-    max_overflow=Config.DB_MAX_OVERFLOW,
-    pool_timeout=Config.DB_POOL_TIMEOUT,
-    pool_pre_ping=True,  # Verify connections before using (important for cloud)
-    echo=Config.ENVIRONMENT == 'development',  # Log SQL in development
-    connect_args={
-        'sslmode': Config.DB_SSLMODE,  # Required for Neon
-        'connect_timeout': 10,  # 10 second timeout for cloud connections
-    }
-)
+database_url = Config.get_database_url()
+is_sqlite_url = database_url.startswith("sqlite")
+
+engine_kwargs = {
+    "echo": Config.ENVIRONMENT == 'development',
+}
+
+if is_sqlite_url:
+    engine_kwargs.update({
+        "connect_args": {"check_same_thread": False},
+    })
+else:
+    engine_kwargs.update({
+        "poolclass": QueuePool,
+        "pool_size": Config.DB_POOL_SIZE,
+        "max_overflow": Config.DB_MAX_OVERFLOW,
+        "pool_timeout": Config.DB_POOL_TIMEOUT,
+        "pool_pre_ping": True,  # Verify connections before using (important for cloud)
+        "connect_args": {
+            'sslmode': Config.DB_SSLMODE,  # Required for Neon
+            'connect_timeout': 10,  # 10 second timeout for cloud connections
+        },
+    })
+
+# Create database engine with environment-aware settings
+engine = create_engine(database_url, **engine_kwargs)
 
 # Create session factory
 SessionLocal = sessionmaker(

@@ -20,6 +20,7 @@ class Config:
     DB_USER = os.getenv('DB_USER', '')
     DB_PASSWORD = os.getenv('DB_PASSWORD', '')
     DB_SSLMODE = os.getenv('DB_SSLMODE', 'require')
+    DATABASE_URL = os.getenv('DATABASE_URL', '')
 
     # Connection pool settings
     DB_POOL_SIZE = int(os.getenv('DB_POOL_SIZE', 5))
@@ -35,6 +36,12 @@ class Config:
         Construct PostgreSQL connection URL for Neon
         Includes SSL mode requirement
         """
+        if cls.DATABASE_URL:
+            return cls.DATABASE_URL
+
+        if not all([cls.DB_HOST, cls.DB_USER, cls.DB_PASSWORD, cls.DB_NAME]):
+            return 'sqlite:///./email_system_test.db'
+
         return (
             f"postgresql://{cls.DB_USER}:{cls.DB_PASSWORD}"
             f"@{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"
@@ -44,6 +51,9 @@ class Config:
     @classmethod
     def validate(cls):
         """Validate required configuration"""
+        if cls.DATABASE_URL:
+            return
+
         required = ['DB_HOST', 'DB_PASSWORD', 'DB_NAME', 'DB_USER']
         missing = [key for key in required if not getattr(cls, key)]
         if missing:
@@ -65,9 +75,7 @@ class Config:
             'database': cls.DB_NAME,
             'user': cls.DB_USER,
             'ssl_mode': cls.DB_SSLMODE,
-            'environment': cls.ENVIRONMENT
+            'environment': cls.ENVIRONMENT,
+            'database_url_configured': bool(cls.DATABASE_URL)
         }
-
-# Validate on import
-Config.validate()
 
