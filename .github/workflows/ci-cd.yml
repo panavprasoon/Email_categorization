@@ -24,6 +24,12 @@ jobs:
           pip install -r requirements_api.txt
           pip install pytest pytest-cov
 
+      - name: Download NLTK data
+        run: |
+          python -m nltk.downloader --quiet wordnet
+          python -m nltk.downloader --quiet omw-1.4
+          python -m nltk.downloader --quiet stopwords punkt
+
       - name: Run tests
         run: |
           pytest tests/test_auth.py tests/test_preprocessing.py tests/test_training.py -v
