@@ -231,6 +231,11 @@ Authentication:
 - API and frontend should be independently deployable services
 - After env var changes, always redeploy service
 
+### 10.1 Deployed URLs
+
+- Backend API: https://email-system-api.onrender.com
+- Frontend App: https://email-system-frontend.onrender.com
+
 ---
 
 ## 11) Common Failure Modes and Quick Fixes
