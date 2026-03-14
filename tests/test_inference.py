@@ -15,6 +15,7 @@ import os
 import sys
 import unittest
 import tempfile
+import uuid
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -79,8 +80,9 @@ class TestEmailCategorizer(unittest.TestCase):
             trainer.save_model(model_path)
 
             # Register as active
+            test_version = f"test_inference_{uuid.uuid4().hex[:8]}"
             registry.register_model(
-                version='test_inference',
+                version=test_version,
                 model_type='logistic_regression',
                 metrics={'accuracy': 0.9, 'f1_score': 0.89},
                 model_path=model_path,

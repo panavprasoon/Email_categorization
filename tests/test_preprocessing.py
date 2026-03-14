@@ -222,7 +222,7 @@ class TestEmailFeatureExtractor(unittest.TestCase):
     def test_preprocessing_consistency(self):
         """Test that preprocessing is consistent across fit and transform."""
         # allow min_df=1 so a single document can be used safely
-        extractor = EmailFeatureExtractor(max_features=100, min_df=1)
+        extractor = EmailFeatureExtractor(max_features=100, min_df=1, max_df=1.0)
         
         # Fit on lowercase text
         train_texts = ["URGENT MEETING TOMORROW"]

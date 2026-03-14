@@ -5,6 +5,9 @@ Email Categorizer - Loads and uses the trained model
 
 import joblib
 import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class EmailCategorizer:
     """Categorizes emails using trained ML model"""
@@ -27,7 +30,27 @@ class EmailCategorizer:
             self.model_path = model_path
             self.vectorizer_path = vectorizer_path
         else:
-            raise ValueError("Must provide either (model_path and vectorizer_path) or artifacts_dir")
+            # Auto-resolve from active model registry first, then env/default.
+            resolved_model_path = None
+            resolved_vectorizer_path = None
+
+            try:
+                from training.registry import ModelRegistry
+
+                active_model = ModelRegistry().get_active_model()
+                if active_model is not None:
+                    resolved_model_path = getattr(active_model, 'model_path', None)
+                    resolved_vectorizer_path = getattr(active_model, 'vectorizer_path', None)
+            except Exception:
+                # Fall through to env/default path resolution
+                pass
+
+            if not resolved_model_path or not resolved_vectorizer_path:
+                resolved_model_path = os.getenv('MODEL_PATH', 'artifacts/best_model.pkl')
+                resolved_vectorizer_path = os.getenv('VECTORIZER_PATH', 'artifacts/tfidf_vectorizer.pkl')
+
+            self.model_path = resolved_model_path
+            self.vectorizer_path = resolved_vectorizer_path
        
         self.model = None
         self.vectorizer = None
