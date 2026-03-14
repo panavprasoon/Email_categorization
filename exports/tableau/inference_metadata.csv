@@ -1,3 +1,0 @@
-id,date,total_predictions,category_distribution,avg_confidence,low_confidence_count,created_at
-1,2026-03-07,1,"{'spam': 0.09801918767166029, 'report': 0.4213729665422218, 'meeting': 0.15354605379243658, 'approval': 0.10249162139124798, 'incident': 0.08797066260558375, 'reminder': 0.1365995079968495}",,0,2026-03-07 19:53:10.958870
-2,2026-03-11,122,"{'Spam': 12, 'Work': 18, 'Personal': 48, 'Newsletter': 24, 'Promotions': 20}",0.5097540983606562,48,2026-03-11 17:18:02.527004

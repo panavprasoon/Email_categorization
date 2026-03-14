@@ -6,11 +6,12 @@ Interactive script to test API endpoints manually.
 
 import requests
 import json
+import os
 from datetime import datetime
 
 # Configuration
 BASE_URL = "http://localhost:8000"
-API_KEY = "dev-api-key-12345"
+API_KEY = os.getenv("API_KEY", os.getenv("API_KEY_1", "dev-api-key-12345"))
 
 headers = {
     "X-API-Key": API_KEY,
